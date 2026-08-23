@@ -9,6 +9,16 @@ android {
         version = release(36)
     }
 
+    
+    signingConfigs {
+        create("release") {
+            storeFile = file("../release_key")
+            storePassword = "Batdongsan1@"
+            keyAlias = "key0"
+            keyPassword = "Batdongsan1@"
+        }
+    }
+
     defaultConfig {
         applicationId = "com.azezy.azezyball"
         minSdk = 24
@@ -21,6 +31,7 @@ android {
 
     buildTypes {
         release {
+            signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
