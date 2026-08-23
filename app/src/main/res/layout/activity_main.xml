@@ -18,13 +18,13 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <!-- Compact Floating Top Bar (Single Clean Row) -->
+    <!-- Compact Floating Top Bar (Single Clean Row with Safe Notch Clearance) -->
     <RelativeLayout
         android:id="@+id/topBar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:paddingHorizontal="16dp"
-        android:paddingTop="34dp"
+        android:paddingTop="52dp"
         android:paddingBottom="8dp"
         app:layout_constraintTop_toTopOf="parent">
 

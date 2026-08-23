@@ -121,15 +121,11 @@ object ShaderHelper {
             // Comic Rim Light (edge glow)
             float rim = pow(1.0 - max(dot(N, V), 0.0), 2.5) * 0.35;
             
-            // Cartoon Specular (Glossy dot)
+            // Cartoon Anti-Aliased Specular (Smooth Glossy Highlight)
             float specular = 0.0;
-            if (u_Metallic > 0.1) {
+            if (u_Metallic > 0.05) {
                 float RdotV = max(dot(R, V), 0.0);
-                if (RdotV > 0.88) {
-                    specular = 0.8;
-                } else if (RdotV > 0.75) {
-                    specular = 0.35;
-                }
+                specular = smoothstep(0.72, 0.92, RdotV) * 0.75;
             }
             
             vec4 baseColor = u_Color;
@@ -137,7 +133,7 @@ object ShaderHelper {
                 baseColor = texture2D(u_Texture, v_TexCoordinate) * u_Color;
             }
             
-            vec3 litColor = baseColor.rgb * (ambient + diffuse + rim) + vec3(1.0, 0.96, 0.8) * (specular * u_Metallic);
+            vec3 litColor = baseColor.rgb * (ambient + diffuse + rim) + vec3(1.0, 0.98, 0.85) * (specular * u_Metallic);
             gl_FragColor = vec4(litColor, baseColor.a);
         }
     """.trimIndent()

@@ -36,6 +36,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var tvControlHint: TextView
     private lateinit var bottomHintCard: LinearLayout
 
+    private lateinit var topBar: View
     private lateinit var btnSound: ImageButton
     private lateinit var btnSettings: ImageButton
 
@@ -55,6 +56,7 @@ class MainActivity : AppCompatActivity() {
         soundEngine = SoundEngine(this)
 
         initViews()
+        setupInsets()
         setupListeners()
         setupAutoDismissHint()
         updateDashboard(gameManager.currentScore, gameManager.bestScore, gameManager.currentStreak)
@@ -64,6 +66,7 @@ class MainActivity : AppCompatActivity() {
         glSurfaceView = findViewById(R.id.glSurfaceView)
         glSurfaceView.init(gameManager, soundEngine)
 
+        topBar = findViewById(R.id.topBar)
         tvScore = findViewById(R.id.tvScore)
         tvStreak = findViewById(R.id.tvStreak)
         tvDistance = findViewById(R.id.tvDistance)
@@ -76,6 +79,18 @@ class MainActivity : AppCompatActivity() {
         celebrationBanner = findViewById(R.id.celebrationBanner)
         tvBannerTitle = findViewById(R.id.tvBannerTitle)
         tvBannerSub = findViewById(R.id.tvBannerSub)
+    }
+
+    private fun setupInsets() {
+        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.rootLayout)) { _, windowInsets ->
+            val insets = windowInsets.getInsets(
+                androidx.core.view.WindowInsetsCompat.Type.statusBars() or
+                androidx.core.view.WindowInsetsCompat.Type.displayCutout()
+            )
+            val topPadding = insets.top + (12 * resources.displayMetrics.density).toInt()
+            topBar.setPadding(topBar.paddingLeft, topPadding.coerceAtLeast((48 * resources.displayMetrics.density).toInt()), topBar.paddingRight, topBar.paddingBottom)
+            windowInsets
+        }
     }
 
     private fun setupListeners() {

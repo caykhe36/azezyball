@@ -208,18 +208,19 @@ object TextureGenerator {
     }
 
     fun createCartoonNetTexture(): Int {
-        val size = 128
+        val size = 256
         val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
         canvas.drawColor(Color.argb(0, 0, 0, 0))
 
         val netPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.argb(210, 255, 255, 255) // Bright clean white net
-            strokeWidth = 3.5f
+            color = Color.argb(190, 255, 255, 255) // Soft clean cartoon white net
+            strokeWidth = 6f
             style = Paint.Style.STROKE
+            strokeCap = Paint.Cap.ROUND
         }
 
-        val step = 16f
+        val step = 48f
         for (i in -size until size * 2 step step.toInt()) {
             canvas.drawLine(i.toFloat(), 0f, (i + size).toFloat(), size.toFloat(), netPaint)
             canvas.drawLine((i + size).toFloat(), 0f, i.toFloat(), size.toFloat(), netPaint)

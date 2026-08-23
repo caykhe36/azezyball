@@ -166,7 +166,7 @@ class GoalMesh(
             floatArrayOf(halfW, height, depth),
             floatArrayOf(-halfW, height, depth),
             floatArrayOf(0f, 0f, -1f),
-            width * 4f, height * 4f
+            width * 0.8f, height * 0.8f
         )
 
         // Top net
@@ -176,7 +176,7 @@ class GoalMesh(
             floatArrayOf(halfW, height, depth),
             floatArrayOf(-halfW, height, depth),
             floatArrayOf(0f, -1f, 0f),
-            width * 4f, depth * 4f
+            width * 0.8f, depth * 0.8f
         )
 
         // Left net
@@ -186,7 +186,7 @@ class GoalMesh(
             floatArrayOf(-halfW, height, 0f),
             floatArrayOf(-halfW, height, depth),
             floatArrayOf(1f, 0f, 0f),
-            depth * 4f, height * 4f
+            depth * 0.8f, height * 0.8f
         )
 
         // Right net
@@ -196,7 +196,7 @@ class GoalMesh(
             floatArrayOf(halfW, height, depth),
             floatArrayOf(halfW, height, 0f),
             floatArrayOf(-1f, 0f, 0f),
-            depth * 4f, height * 4f
+            depth * 0.8f, height * 0.8f
         )
 
         return Mesh(

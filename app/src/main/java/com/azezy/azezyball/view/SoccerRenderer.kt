@@ -374,12 +374,13 @@ class SoccerRenderer(
         GLES20.glUniform1i(uTextureHandle, 0)
         goalMesh.frameMesh.render(aPositionHandle, aNormalHandle, aTexCoordinateHandle, true)
 
-        // 2. White Cartoon Net
+        // 2. White Cartoon Net (Alpha Blended with Depth Mask False to prevent flickering)
         GLES20.glEnable(GLES20.GL_BLEND)
         GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA)
         GLES20.glDisable(GLES20.GL_CULL_FACE)
+        GLES20.glDepthMask(false) // CRITICAL: Prevent transparent fragments from causing z-fighting/flicker
 
-        GLES20.glUniform4f(uColorHandle, 1.0f, 1.0f, 1.0f, 0.95f)
+        GLES20.glUniform4f(uColorHandle, 1.0f, 1.0f, 1.0f, 0.85f)
         GLES20.glUniform1i(uUseTextureHandle, 1)
         GLES20.glUniform1f(uSpecularPowerHandle, 8.0f)
         GLES20.glUniform1f(uMetallicHandle, 0.0f)
@@ -388,6 +389,7 @@ class SoccerRenderer(
         GLES20.glUniform1i(uTextureHandle, 0)
         goalMesh.netMesh.render(aPositionHandle, aNormalHandle, aTexCoordinateHandle, true)
 
+        GLES20.glDepthMask(true) // Restore depth writing
         GLES20.glEnable(GLES20.GL_CULL_FACE)
         GLES20.glDisable(GLES20.GL_BLEND)
     }
