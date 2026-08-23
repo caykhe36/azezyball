@@ -44,11 +44,9 @@ class GameManager(context: Context) {
     }
 
     fun getNextBallPosition(): Pair<Float, Float> {
-        // Generates realistic football shoot positions (x, z)
-        // z: -11m to -18m
-        // x: -5m to +5m
-        val distZ = -11.0f - (Random.nextFloat() * 6.5f)
-        val posX = (Random.nextFloat() - 0.5f) * 7.0f
+        // Keeps ball centered horizontally in screen view
+        val distZ = -10.5f - (Random.nextFloat() * 2.5f)
+        val posX = 0.0f // Perfectly centered in middle
         currentDistance = hypot(posX.toDouble(), distZ.toDouble()).toFloat()
         return Pair(posX, distZ)
     }

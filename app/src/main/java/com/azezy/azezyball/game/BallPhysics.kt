@@ -18,18 +18,18 @@ enum class BallState {
 class BallPhysics {
 
     val radius = 0.22f
-    val goalWidth = 5.0f
-    val goalHeight = 2.2f
+    val goalWidth = 5.2f
+    val goalHeight = 2.3f
     val goalZ = 0.0f
-    val postRadius = 0.08f
-    val netDepth = 1.8f
+    val postRadius = 0.09f
+    val netDepth = 2.0f
 
     var state = BallState.IDLE
 
-    // Ball 3D transforms
+    // Ball 3D transforms (Centered in lower middle view)
     var x = 0f
     var y = radius
-    var z = -12f
+    var z = -10.5f
 
     var vx = 0f
     var vy = 0f
@@ -62,7 +62,7 @@ class BallPhysics {
     private var flightTime = 0f
     private var postHitSoundPlayed = false
 
-    fun reset(newX: Float = 0f, newZ: Float = -12f) {
+    fun reset(newX: Float = 0f, newZ: Float = -10.5f) {
         x = newX
         y = radius
         z = newZ

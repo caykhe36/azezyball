@@ -1,17 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="gold_primary">#FFD700</color>
-    <color name="gold_dark">#B8860B</color>
-    <color name="gold_light">#FFF8DC</color>
-    <color name="gold_accent">#FFA500</color>
-    <color name="obsidian_bg">#0A0E17</color>
-    <color name="obsidian_card">#131B2E</color>
-    <color name="obsidian_card_stroke">#2A3B5C</color>
-    <color name="green_pitch">#1B5E20</color>
-    <color name="green_pitch_light">#2E7D32</color>
+    <color name="gold_primary">#FBBF24</color>
+    <color name="gold_dark">#D97706</color>
+    <color name="gold_light">#FEF08A</color>
+    <color name="gold_accent">#F59E0B</color>
+    <color name="cartoon_sky">#0EA5E9</color>
+    <color name="cartoon_sky_light">#BAE6FD</color>
+    <color name="cartoon_card">#FFFFFF</color>
+    <color name="cartoon_card_dark">#1E293B</color>
+    <color name="cartoon_card_border">#FCD34D</color>
+    <color name="cartoon_green">#22C55E</color>
+    <color name="cartoon_orange">#F97316</color>
+    <color name="cartoon_purple">#8B5CF6</color>
+    <color name="cartoon_pink">#EC4899</color>
     <color name="white">#FFFFFFFF</color>
     <color name="black">#FF000000</color>
-    <color name="text_muted">#90A4AE</color>
-    <color name="red_miss">#EF5350</color>
-    <color name="gold_glow">#40FFD700</color>
+    <color name="text_dark">#0F172A</color>
+    <color name="text_muted">#64748B</color>
+    <color name="red_miss">#EF4444</color>
 </resources>

@@ -56,15 +56,14 @@ object ShaderHelper {
             return 0
         }
 
-        // Shaders can be safely flagged for deletion once linked
         GLES20.glDeleteShader(vertexShader)
         GLES20.glDeleteShader(fragmentShader)
 
         return programId
     }
 
-    // Standard Shaders
-    val STANDARD_VERTEX_SHADER = """
+    // 1. CARTOON CEL-SHADING (TOON) SHADER
+    val CARTOON_VERTEX_SHADER = """
         uniform mat4 u_MVPMatrix;
         uniform mat4 u_MVMatrix;
         uniform mat4 u_NormalMatrix;
@@ -79,13 +78,13 @@ object ShaderHelper {
         
         void main() {
             v_Position = vec3(u_MVMatrix * vec4(a_Position, 1.0));
-            v_Normal = vec3(u_NormalMatrix * vec4(a_Normal, 0.0));
+            v_Normal = normalize(vec3(u_NormalMatrix * vec4(a_Normal, 0.0)));
             v_TexCoordinate = a_TexCoordinate;
             gl_Position = u_MVPMatrix * vec4(a_Position, 1.0);
         }
     """.trimIndent()
 
-    val STANDARD_FRAGMENT_SHADER = """
+    val CARTOON_FRAGMENT_SHADER = """
         precision mediump float;
         
         uniform vec3 u_LightPos;
@@ -105,16 +104,32 @@ object ShaderHelper {
             vec3 V = normalize(-v_Position);
             vec3 R = reflect(-L, N);
             
-            // Ambient
-            float ambient = 0.35;
+            // Bright cartoon ambient light
+            float ambient = 0.60;
             
-            // Diffuse
-            float diffuse = max(dot(N, L), 0.0) * 0.75;
+            // Discrete Cel / Toon Diffuse Bands (Bright anime style)
+            float NdotL = dot(N, L);
+            float diffuse = 0.0;
+            if (NdotL > 0.6) {
+                diffuse = 0.45;
+            } else if (NdotL > 0.15) {
+                diffuse = 0.25;
+            } else {
+                diffuse = 0.05;
+            }
             
-            // Specular (Golden metallic highlights)
+            // Comic Rim Light (edge glow)
+            float rim = pow(1.0 - max(dot(N, V), 0.0), 2.5) * 0.35;
+            
+            // Cartoon Specular (Glossy dot)
             float specular = 0.0;
-            if (diffuse > 0.0) {
-                specular = pow(max(dot(R, V), 0.0), u_SpecularPower) * u_Metallic;
+            if (u_Metallic > 0.1) {
+                float RdotV = max(dot(R, V), 0.0);
+                if (RdotV > 0.88) {
+                    specular = 0.8;
+                } else if (RdotV > 0.75) {
+                    specular = 0.35;
+                }
             }
             
             vec4 baseColor = u_Color;
@@ -122,12 +137,35 @@ object ShaderHelper {
                 baseColor = texture2D(u_Texture, v_TexCoordinate) * u_Color;
             }
             
-            vec3 finalColor = baseColor.rgb * (ambient + diffuse) + vec3(1.0, 0.9, 0.6) * specular;
-            gl_FragColor = vec4(finalColor, baseColor.a);
+            vec3 litColor = baseColor.rgb * (ambient + diffuse + rim) + vec3(1.0, 0.96, 0.8) * (specular * u_Metallic);
+            gl_FragColor = vec4(litColor, baseColor.a);
         }
     """.trimIndent()
 
-    // Particle Shader
+    // 2. CARTOON SKY BACKGROUND SHADER
+    val SKY_VERTEX_SHADER = """
+        uniform mat4 u_MVPMatrix;
+        attribute vec3 a_Position;
+        attribute vec2 a_TexCoordinate;
+        varying vec2 v_TexCoordinate;
+        
+        void main() {
+            v_TexCoordinate = a_TexCoordinate;
+            gl_Position = u_MVPMatrix * vec4(a_Position, 1.0);
+        }
+    """.trimIndent()
+
+    val SKY_FRAGMENT_SHADER = """
+        precision mediump float;
+        uniform sampler2D u_Texture;
+        varying vec2 v_TexCoordinate;
+        
+        void main() {
+            gl_FragColor = texture2D(u_Texture, v_TexCoordinate);
+        }
+    """.trimIndent()
+
+    // 3. CARTOON PARTICLE SHADER
     val PARTICLE_VERTEX_SHADER = """
         uniform mat4 u_MVPMatrix;
         attribute vec3 a_Position;
@@ -148,18 +186,21 @@ object ShaderHelper {
         varying vec4 v_Color;
         
         void main() {
-            // Circular particle with soft radial fade
             vec2 coord = gl_PointCoord - vec2(0.5);
             float distSq = dot(coord, coord);
             if (distSq > 0.25) {
                 discard;
             }
-            float alpha = smoothstep(0.25, 0.0, distSq) * v_Color.a;
+            // Crisp cartoon circular particle with cute border
+            float alpha = v_Color.a;
+            if (distSq > 0.18) {
+                alpha *= 0.5;
+            }
             gl_FragColor = vec4(v_Color.rgb, alpha);
         }
     """.trimIndent()
 
-    // Line / Trajectory Shader
+    // 4. TRAJECTORY LINE SHADER
     val LINE_VERTEX_SHADER = """
         uniform mat4 u_MVPMatrix;
         attribute vec3 a_Position;

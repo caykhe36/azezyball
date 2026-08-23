@@ -4,14 +4,14 @@
         <!-- Primary brand color. -->
         <item name="colorPrimary">@color/gold_primary</item>
         <item name="colorPrimaryVariant">@color/gold_dark</item>
-        <item name="colorOnPrimary">@color/obsidian_bg</item>
+        <item name="colorOnPrimary">@color/white</item>
         <!-- Secondary brand color. -->
         <item name="colorSecondary">@color/gold_accent</item>
         <item name="colorSecondaryVariant">@color/gold_dark</item>
-        <item name="colorOnSecondary">@color/obsidian_bg</item>
+        <item name="colorOnSecondary">@color/white</item>
         <!-- Status bar color. -->
-        <item name="android:statusBarColor">@color/obsidian_bg</item>
-        <item name="android:navigationBarColor">@color/obsidian_bg</item>
-        <item name="android:windowBackground">@color/obsidian_bg</item>
+        <item name="android:statusBarColor">@color/cartoon_sky</item>
+        <item name="android:navigationBarColor">@color/cartoon_sky</item>
+        <item name="android:windowBackground">@color/cartoon_sky</item>
     </style>
 </resources>

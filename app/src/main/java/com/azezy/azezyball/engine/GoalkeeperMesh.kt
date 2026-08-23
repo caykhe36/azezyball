@@ -4,10 +4,10 @@ class GoalkeeperMesh {
     val mesh: Mesh
 
     init {
-        mesh = buildGoalkeeperMesh()
+        mesh = buildCartoonGoalkeeperMesh()
     }
 
-    private fun buildGoalkeeperMesh(): Mesh {
+    private fun buildCartoonGoalkeeperMesh(): Mesh {
         val vertices = ArrayList<Float>()
         val normals = ArrayList<Float>()
         val texCoords = ArrayList<Float>()
@@ -61,23 +61,27 @@ class GoalkeeperMesh {
             }
         }
 
-        // Stylized Goalkeeper / Target Model (height ~ 1.8m)
-        // Torso
-        addBox(-0.25f, 0.8f, -0.15f, 0.25f, 1.45f, 0.15f)
-        // Head
-        addBox(-0.15f, 1.48f, -0.15f, 0.15f, 1.78f, 0.15f)
-        // Left Arm (stretched out)
-        addBox(-0.55f, 1.15f, -0.1f, -0.25f, 1.35f, 0.1f)
-        // Left Glove
-        addBox(-0.70f, 1.12f, -0.12f, -0.55f, 1.38f, 0.12f)
-        // Right Arm (stretched out)
-        addBox(0.25f, 1.15f, -0.1f, 0.55f, 1.35f, 0.1f)
-        // Right Glove
-        addBox(0.55f, 1.12f, -0.12f, 0.70f, 1.38f, 0.12f)
-        // Left Leg
-        addBox(-0.22f, 0f, -0.1f, -0.05f, 0.8f, 0.1f)
-        // Right Leg
-        addBox(0.05f, 0f, -0.1f, 0.22f, 0.8f, 0.1f)
+        // Chunky Cartoon Mascot Goalkeeper
+        // Torso (Bright Jersey)
+        addBox(-0.35f, 0.75f, -0.2f, 0.35f, 1.45f, 0.2f)
+
+        // Head (Chunky Cute Mascot Head)
+        addBox(-0.25f, 1.48f, -0.22f, 0.25f, 1.88f, 0.22f)
+
+        // Left Arm (Outstretched)
+        addBox(-0.65f, 1.12f, -0.15f, -0.35f, 1.35f, 0.15f)
+        // Huge Left Glove (Cartoon Jumbo Mitt)
+        addBox(-0.92f, 1.05f, -0.20f, -0.65f, 1.42f, 0.20f)
+
+        // Right Arm (Outstretched)
+        addBox(0.35f, 1.12f, -0.15f, 0.65f, 1.35f, 0.15f)
+        // Huge Right Glove (Cartoon Jumbo Mitt)
+        addBox(0.65f, 1.05f, -0.20f, 0.92f, 1.42f, 0.20f)
+
+        // Left Leg & Boot
+        addBox(-0.30f, 0f, -0.15f, -0.08f, 0.75f, 0.15f)
+        // Right Leg & Boot
+        addBox(0.08f, 0f, -0.15f, 0.30f, 0.75f, 0.15f)
 
         return Mesh(
             Mesh.createFloatBuffer(vertices.toFloatArray()),

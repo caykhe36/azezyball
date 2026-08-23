@@ -8,7 +8,7 @@ import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.random.Random
 
-class ParticleSystem(val maxParticles: Int = 300) {
+class ParticleSystem(val maxParticles: Int = 360) {
 
     class Particle {
         var active = false
@@ -19,50 +19,52 @@ class ParticleSystem(val maxParticles: Int = 300) {
         var vy = 0f
         var vz = 0f
         var r = 1f
-        var g = 0.84f
-        var b = 0f
+        var g = 1f
+        var b = 1f
         var a = 1f
         var life = 0f
         var maxLife = 1f
-        var size = 20f
+        var size = 24f
     }
 
     private val particles = Array(maxParticles) { Particle() }
-    private val vertexData = FloatArray(maxParticles * 8) // x, y, z, r, g, b, a, size
+    private val vertexData = FloatArray(maxParticles * 8)
     private val vertexBuffer: FloatBuffer = ByteBuffer.allocateDirect(vertexData.size * 4)
         .order(ByteOrder.nativeOrder())
         .asFloatBuffer()
 
     private var activeCount = 0
 
-    fun explode(originX: Float, originY: Float, originZ: Float, count: Int = 120) {
+    fun explode(originX: Float, originY: Float, originZ: Float, count: Int = 180) {
         var spawned = 0
         for (p in particles) {
             if (!p.active) {
                 p.active = true
-                p.x = originX + (Random.nextFloat() - 0.5f) * 0.4f
-                p.y = originY + (Random.nextFloat() - 0.5f) * 0.4f
-                p.z = originZ + (Random.nextFloat() - 0.5f) * 0.4f
+                p.x = originX + (Random.nextFloat() - 0.5f) * 0.5f
+                p.y = originY + (Random.nextFloat() - 0.5f) * 0.5f
+                p.z = originZ + (Random.nextFloat() - 0.5f) * 0.5f
 
-                val speed = 2.5f + Random.nextFloat() * 4.5f
+                val speed = 3.5f + Random.nextFloat() * 5.0f
                 val angle = Random.nextFloat() * (Math.PI * 2).toFloat()
-                val elevation = (Random.nextFloat() * 0.8f + 0.2f)
+                val elevation = (Random.nextFloat() * 0.85f + 0.15f)
 
-                p.vx = cos(angle) * speed * (1f - elevation * 0.5f)
-                p.vy = speed * elevation + 1.5f
-                p.vz = sin(angle) * speed * (1f - elevation * 0.5f) - 1.0f
+                p.vx = cos(angle) * speed * (1f - elevation * 0.4f)
+                p.vy = speed * elevation + 2.0f
+                p.vz = sin(angle) * speed * (1f - elevation * 0.4f) - 0.8f
 
-                // Gold, Yellow, Orange, White Spark colors
-                when (Random.nextInt(4)) {
-                    0 -> { p.r = 1.0f; p.g = 0.84f; p.b = 0.0f } // Pure Gold
-                    1 -> { p.r = 1.0f; p.g = 0.95f; p.b = 0.4f } // Bright Light Gold
-                    2 -> { p.r = 1.0f; p.g = 0.55f; p.b = 0.0f } // Amber Orange
-                    3 -> { p.r = 1.0f; p.g = 1.0f; p.b = 1.0f }  // White Sparkle
+                // Bright cartoon rainbow confetti colors
+                when (Random.nextInt(6)) {
+                    0 -> { p.r = 0.99f; p.g = 0.75f; p.b = 0.14f } // Gold
+                    1 -> { p.r = 0.96f; p.g = 0.25f; p.b = 0.37f } // Bright Pink/Magenta
+                    2 -> { p.r = 0.22f; p.g = 0.74f; p.b = 0.97f } // Sky Cyan
+                    3 -> { p.r = 0.29f; p.g = 0.87f; p.b = 0.50f } // Bright Lime
+                    4 -> { p.r = 0.98f; p.g = 0.57f; p.b = 0.24f } // Vivid Orange
+                    5 -> { p.r = 0.99f; p.g = 0.88f; p.b = 0.28f } // Sun Yellow
                 }
                 p.a = 1.0f
-                p.maxLife = 1.5f + Random.nextFloat() * 1.2f
+                p.maxLife = 1.8f + Random.nextFloat() * 1.0f
                 p.life = p.maxLife
-                p.size = 18f + Random.nextFloat() * 24f
+                p.size = 24f + Random.nextFloat() * 26f
 
                 spawned++
                 if (spawned >= count) break
@@ -82,25 +84,22 @@ class ParticleSystem(val maxParticles: Int = 300) {
                     continue
                 }
 
-                // Gravity & air resistance
                 p.vy -= 9.8f * dt
-                p.vx *= (1f - 0.5f * dt)
-                p.vz *= (1f - 0.5f * dt)
+                p.vx *= (1f - 0.4f * dt)
+                p.vz *= (1f - 0.4f * dt)
 
                 p.x += p.vx * dt
                 p.y += p.vy * dt
                 p.z += p.vz * dt
 
-                // Bounce off ground
-                if (p.y < 0.05f) {
-                    p.y = 0.05f
-                    p.vy = -p.vy * 0.4f
+                if (p.y < 0.08f) {
+                    p.y = 0.08f
+                    p.vy = -p.vy * 0.45f
                 }
 
                 val progress = p.life / p.maxLife
-                p.a = progress.coerceIn(0f, 1f)
+                p.a = (progress * 1.2f).coerceIn(0f, 1f)
 
-                // Fill vertex data
                 vertexData[offset++] = p.x
                 vertexData[offset++] = p.y
                 vertexData[offset++] = p.z
@@ -108,7 +107,7 @@ class ParticleSystem(val maxParticles: Int = 300) {
                 vertexData[offset++] = p.g
                 vertexData[offset++] = p.b
                 vertexData[offset++] = p.a
-                vertexData[offset++] = p.size * (0.5f + 0.5f * progress)
+                vertexData[offset++] = p.size * (0.6f + 0.4f * progress)
 
                 activeCount++
             }
@@ -132,12 +131,11 @@ class ParticleSystem(val maxParticles: Int = 300) {
         GLES20.glUseProgram(programId)
         GLES20.glUniformMatrix4fv(mvpMatrixHandle, 1, false, mvpMatrix, 0)
 
-        // Enable alpha blending & point size
         GLES20.glEnable(GLES20.GL_BLEND)
-        GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE)
+        GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA)
         GLES20.glDepthMask(false)
 
-        val stride = 8 * 4 // 8 floats per vertex
+        val stride = 8 * 4
 
         vertexBuffer.position(0)
         GLES20.glEnableVertexAttribArray(positionHandle)
@@ -158,6 +156,5 @@ class ParticleSystem(val maxParticles: Int = 300) {
         GLES20.glDisableVertexAttribArray(sizeHandle)
 
         GLES20.glDepthMask(true)
-        GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA)
     }
 }

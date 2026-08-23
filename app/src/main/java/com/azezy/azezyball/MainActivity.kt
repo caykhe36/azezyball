@@ -165,7 +165,7 @@ class MainActivity : AppCompatActivity() {
     private fun showGoalCelebration(event: ScoreEvent) {
         celebrationBanner.visibility = View.VISIBLE
         tvBannerTitle.text = event.title
-        tvBannerTitle.setTextColor(ContextCompat.getColor(this, R.color.gold_primary))
+        tvBannerTitle.setTextColor(Color.WHITE)
         tvBannerSub.text = String.format(Locale.US, "+%d ĐIỂM (Cự ly %.1fm)", event.pointsAdded, event.distanceMeters)
 
         // Overshoot Scale Animation

@@ -21,13 +21,6 @@ import com.azezy.azezyball.game.GameManager
 import com.azezy.azezyball.sound.SoundEngine
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
-import kotlin.math.abs
-import kotlin.math.hypot
-
-enum class ControlMode {
-    SWIPE_FLICK,
-    SLINGSHOT_AIM
-}
 
 class SoccerRenderer(
     private val context: Context,
@@ -36,21 +29,24 @@ class SoccerRenderer(
 ) : GLSurfaceView.Renderer {
 
     val ballPhysics = BallPhysics()
-    private val particleSystem = ParticleSystem(300)
-    private val trajectoryRenderer = TrajectoryRenderer(30)
+    private val particleSystem = ParticleSystem(360)
+    private val trajectoryRenderer = TrajectoryRenderer(32)
 
     var controlMode = ControlMode.SWIPE_FLICK
 
     // OpenGL Programs
-    private var standardProgram = 0
+    private var toonProgram = 0
+    private var skyProgram = 0
     private var particleProgram = 0
     private var lineProgram = 0
 
-    // Textures
+    // Cartoon Textures
     private var ballTextureId = 0
     private var pitchTextureId = 0
     private var netTextureId = 0
     private var goldTextureId = 0
+    private var skyTextureId = 0
+    private var billboardTextureId = 0
 
     // 3D Meshes
     private lateinit var sphereMesh: SphereMesh
@@ -66,18 +62,18 @@ class SoccerRenderer(
     private val mvpMatrix = FloatArray(16)
     private val normalMatrix = FloatArray(16)
 
-    // Camera properties
+    // Camera (Positioned perfectly behind the ball and centered)
     private var camX = 0f
-    private var camY = 1.8f
-    private var camZ = -15.5f
+    private var camY = 1.95f
+    private var camZ = -13.7f
     private var targetX = 0f
-    private var targetY = 1.1f
+    private var targetY = 1.05f
     private var targetZ = 0f
 
-    // Light position (Stadium night floodlight)
-    private val lightPosInEyeSpace = floatArrayOf(0f, 15f, -5f)
+    // Bright Cartoon Sunlight
+    private val lightPosInEyeSpace = floatArrayOf(2f, 20f, -5f)
 
-    // Shader Uniform & Attribute Handles
+    // Shader Uniform & Attribute Handles for Toon Program
     private var uMVPMatrixHandle = 0
     private var uMVMatrixHandle = 0
     private var uNormalMatrixHandle = 0
@@ -91,6 +87,12 @@ class SoccerRenderer(
     private var aNormalHandle = 0
     private var aTexCoordinateHandle = 0
 
+    // Sky Shader handles
+    private var sMvpMatrixHandle = 0
+    private var sTextureHandle = 0
+    private var sPositionHandle = 0
+    private var sTexCoordinateHandle = 0
+
     // Particle handles
     private var pMvpMatrixHandle = 0
     private var pPositionHandle = 0
@@ -102,7 +104,7 @@ class SoccerRenderer(
     private var lPositionHandle = 0
     private var lColorHandle = 0
 
-    // Aiming state for Slingshot mode
+    // Aiming state
     var isAiming = false
     var aimVx = 0f
     var aimVy = 0f
@@ -119,15 +121,14 @@ class SoccerRenderer(
     private fun setupPhysicsCallbacks() {
         ballPhysics.onGoal = {
             soundEngine.playGoal()
-            particleSystem.explode(ballPhysics.x, ballPhysics.y, ballPhysics.z, 140)
+            particleSystem.explode(ballPhysics.x, ballPhysics.y, ballPhysics.z, 200)
             mainHandler.post {
                 gameManager.recordGoal(ballPhysics.x, ballPhysics.y)
             }
-            // Auto schedule next ball after 2.2 seconds
             mainHandler.postDelayed({
                 val nextPos = gameManager.getNextBallPosition()
                 ballPhysics.reset(nextPos.first, nextPos.second)
-            }, 2200)
+            }, 2100)
         }
 
         ballPhysics.onMiss = {
@@ -135,10 +136,9 @@ class SoccerRenderer(
             mainHandler.post {
                 gameManager.recordMiss()
             }
-            // Auto schedule next ball after 1.8 seconds
             mainHandler.postDelayed({
-                ballPhysics.reset(ballPhysics.x * 0.5f, -12f)
-            }, 1800)
+                ballPhysics.reset(0f, -10.5f)
+            }, 1700)
         }
 
         ballPhysics.onPostHit = {
@@ -151,31 +151,42 @@ class SoccerRenderer(
     }
 
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
-        GLES20.glClearColor(0.04f, 0.06f, 0.10f, 1.0f) // Night Obsidian Dark Blue
+        // Bright cheerful sky cyan clear color
+        GLES20.glClearColor(0.22f, 0.74f, 0.97f, 1.0f)
         GLES20.glEnable(GLES20.GL_DEPTH_TEST)
         GLES20.glDepthFunc(GLES20.GL_LEQUAL)
         GLES20.glEnable(GLES20.GL_CULL_FACE)
         GLES20.glCullFace(GLES20.GL_BACK)
 
-        // Compile and Link Standard Program
-        standardProgram = ShaderHelper.createAndLinkProgram(
-            ShaderHelper.STANDARD_VERTEX_SHADER,
-            ShaderHelper.STANDARD_FRAGMENT_SHADER
+        // 1. Compile Toon Program
+        toonProgram = ShaderHelper.createAndLinkProgram(
+            ShaderHelper.CARTOON_VERTEX_SHADER,
+            ShaderHelper.CARTOON_FRAGMENT_SHADER
         )
-        uMVPMatrixHandle = GLES20.glGetUniformLocation(standardProgram, "u_MVPMatrix")
-        uMVMatrixHandle = GLES20.glGetUniformLocation(standardProgram, "u_MVMatrix")
-        uNormalMatrixHandle = GLES20.glGetUniformLocation(standardProgram, "u_NormalMatrix")
-        uLightPosHandle = GLES20.glGetUniformLocation(standardProgram, "u_LightPos")
-        uColorHandle = GLES20.glGetUniformLocation(standardProgram, "u_Color")
-        uTextureHandle = GLES20.glGetUniformLocation(standardProgram, "u_Texture")
-        uUseTextureHandle = GLES20.glGetUniformLocation(standardProgram, "u_UseTexture")
-        uSpecularPowerHandle = GLES20.glGetUniformLocation(standardProgram, "u_SpecularPower")
-        uMetallicHandle = GLES20.glGetUniformLocation(standardProgram, "u_Metallic")
-        aPositionHandle = GLES20.glGetAttribLocation(standardProgram, "a_Position")
-        aNormalHandle = GLES20.glGetAttribLocation(standardProgram, "a_Normal")
-        aTexCoordinateHandle = GLES20.glGetAttribLocation(standardProgram, "a_TexCoordinate")
+        uMVPMatrixHandle = GLES20.glGetUniformLocation(toonProgram, "u_MVPMatrix")
+        uMVMatrixHandle = GLES20.glGetUniformLocation(toonProgram, "u_MVMatrix")
+        uNormalMatrixHandle = GLES20.glGetUniformLocation(toonProgram, "u_NormalMatrix")
+        uLightPosHandle = GLES20.glGetUniformLocation(toonProgram, "u_LightPos")
+        uColorHandle = GLES20.glGetUniformLocation(toonProgram, "u_Color")
+        uTextureHandle = GLES20.glGetUniformLocation(toonProgram, "u_Texture")
+        uUseTextureHandle = GLES20.glGetUniformLocation(toonProgram, "u_UseTexture")
+        uSpecularPowerHandle = GLES20.glGetUniformLocation(toonProgram, "u_SpecularPower")
+        uMetallicHandle = GLES20.glGetUniformLocation(toonProgram, "u_Metallic")
+        aPositionHandle = GLES20.glGetAttribLocation(toonProgram, "a_Position")
+        aNormalHandle = GLES20.glGetAttribLocation(toonProgram, "a_Normal")
+        aTexCoordinateHandle = GLES20.glGetAttribLocation(toonProgram, "a_TexCoordinate")
 
-        // Compile Particle Program
+        // 2. Compile Sky Program
+        skyProgram = ShaderHelper.createAndLinkProgram(
+            ShaderHelper.SKY_VERTEX_SHADER,
+            ShaderHelper.SKY_FRAGMENT_SHADER
+        )
+        sMvpMatrixHandle = GLES20.glGetUniformLocation(skyProgram, "u_MVPMatrix")
+        sTextureHandle = GLES20.glGetUniformLocation(skyProgram, "u_Texture")
+        sPositionHandle = GLES20.glGetAttribLocation(skyProgram, "a_Position")
+        sTexCoordinateHandle = GLES20.glGetAttribLocation(skyProgram, "a_TexCoordinate")
+
+        // 3. Compile Particle Program
         particleProgram = ShaderHelper.createAndLinkProgram(
             ShaderHelper.PARTICLE_VERTEX_SHADER,
             ShaderHelper.PARTICLE_FRAGMENT_SHADER
@@ -185,7 +196,7 @@ class SoccerRenderer(
         pColorHandle = GLES20.glGetAttribLocation(particleProgram, "a_Color")
         pPointSizeHandle = GLES20.glGetAttribLocation(particleProgram, "a_PointSize")
 
-        // Compile Line Program
+        // 4. Compile Line Program
         lineProgram = ShaderHelper.createAndLinkProgram(
             ShaderHelper.LINE_VERTEX_SHADER,
             ShaderHelper.LINE_FRAGMENT_SHADER
@@ -194,13 +205,15 @@ class SoccerRenderer(
         lPositionHandle = GLES20.glGetAttribLocation(lineProgram, "a_Position")
         lColorHandle = GLES20.glGetAttribLocation(lineProgram, "a_Color")
 
-        // Generate Procedural 3D Textures
-        ballTextureId = TextureGenerator.createSoccerBallTexture()
-        pitchTextureId = TextureGenerator.createGrassPitchTexture()
-        netTextureId = TextureGenerator.createGoalNetTexture()
-        goldTextureId = TextureGenerator.createGoldMetalTexture()
+        // Generate Bright Cartoon Textures
+        skyTextureId = TextureGenerator.createCartoonSkyTexture()
+        ballTextureId = TextureGenerator.createCartoonSoccerBallTexture()
+        pitchTextureId = TextureGenerator.createCartoonGrassTexture()
+        netTextureId = TextureGenerator.createCartoonNetTexture()
+        goldTextureId = TextureGenerator.createCartoonGoldTexture()
+        billboardTextureId = TextureGenerator.createCartoonBillboardTexture()
 
-        // Create Meshes
+        // Build 3D Meshes
         sphereMesh = SphereMesh(ballPhysics.radius, 24, 32)
         goalMesh = GoalMesh(ballPhysics.goalWidth, ballPhysics.goalHeight, ballPhysics.netDepth, ballPhysics.postRadius)
         pitchMesh = PitchMesh(36f, 50f)
@@ -212,8 +225,8 @@ class SoccerRenderer(
     override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
         GLES20.glViewport(0, 0, width, height)
         val ratio = width.toFloat() / height.toFloat()
-        // Perspective projection: 55 degree FOV
-        Matrix.perspectiveM(projectionMatrix, 0, 55.0f, ratio, 0.5f, 120.0f)
+        // Portrait FOV 54 degrees for perfect balance of depth and centered ball visibility
+        Matrix.perspectiveM(projectionMatrix, 0, 54.0f, ratio, 0.5f, 150.0f)
     }
 
     override fun onDrawFrame(gl: GL10?) {
@@ -222,53 +235,55 @@ class SoccerRenderer(
         lastFrameTimeNs = now
         if (dt > 0.05f) dt = 0.05f
 
-        // Physics Step
+        // Step Physics & Particles
         ballPhysics.update(dt)
         particleSystem.update(dt)
 
-        // Clear Color & Depth Buffers
+        // Clear
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT or GLES20.GL_DEPTH_BUFFER_BIT)
 
-        // Smooth Camera Follow
+        // Update Camera
         updateCamera(dt)
-
-        // Set View Matrix
         Matrix.setLookAtM(viewMatrix, 0, camX, camY, camZ, targetX, targetY, targetZ, 0f, 1f, 0f)
 
-        // 1. Render Pitch (Grass, lines, stadium walls)
+        // 1. Render Sky Backdrop
+        renderSky()
+
+        // 2. Render Cartoon Grass, Lines & Billboards
         renderPitch()
 
-        // 2. Render 3D Golden Goal (Posts, crossbar, net)
+        // 3. Render Glossy Golden Goal Frame & White Net
         renderGoal()
 
-        // 3. Render 3D Goalkeeper if active
+        // 4. Render Mascot Goalkeeper if active
         if (ballPhysics.goalkeeperEnabled) {
             renderGoalkeeper()
         }
 
-        // 4. Render 3D Soccer Ball
+        // 5. Render Cartoon Soccer Ball
         renderBall()
 
-        // 5. Render Trajectory if aiming
+        // 6. Render Trajectory line
         if (isAiming && (ballPhysics.state == BallState.IDLE || ballPhysics.state == BallState.AIMING)) {
             renderTrajectory()
         }
 
-        // 6. Render 3D Celebration Particles
+        // 7. Render Colorful Celebration Confetti
         renderParticles()
     }
 
     private fun updateCamera(dt: Float) {
         when (ballPhysics.state) {
             BallState.IDLE, BallState.AIMING, BallState.RESETTING -> {
-                val desiredCamX = ballPhysics.x * 0.65f
-                val desiredCamY = 1.7f
-                val desiredCamZ = ballPhysics.z - 3.4f
+                // Ball is centered at x = 0, camera directly behind it
+                val desiredCamX = ballPhysics.x * 0.7f
+                val desiredCamY = 1.90f
+                val desiredCamZ = ballPhysics.z - 3.2f
                 val desiredTargetX = ballPhysics.x * 0.2f
-                val desiredTargetY = 1.1f
+                val desiredTargetY = 1.05f
                 val desiredTargetZ = 0.0f
 
-                val lerpFactor = (5.0f * dt).coerceIn(0f, 1f)
+                val lerpFactor = (6.0f * dt).coerceIn(0f, 1f)
                 camX += (desiredCamX - camX) * lerpFactor
                 camY += (desiredCamY - camY) * lerpFactor
                 camZ += (desiredCamZ - camZ) * lerpFactor
@@ -278,14 +293,14 @@ class SoccerRenderer(
             }
             BallState.FLYING, BallState.SCORED, BallState.MISSED -> {
                 val desiredCamX = ballPhysics.x * 0.5f
-                val desiredCamY = 1.9f + (ballPhysics.y * 0.2f)
-                val desiredCamZ = (ballPhysics.z - 3.8f).coerceAtMost(-4.0f)
+                val desiredCamY = 2.0f + (ballPhysics.y * 0.25f)
+                val desiredCamZ = (ballPhysics.z - 3.5f).coerceAtMost(-3.5f)
 
-                val desiredTargetX = ballPhysics.x * 0.6f
-                val desiredTargetY = 1.1f + (ballPhysics.y * 0.4f)
+                val desiredTargetX = ballPhysics.x * 0.7f
+                val desiredTargetY = 1.1f + (ballPhysics.y * 0.35f)
                 val desiredTargetZ = 0.0f
 
-                val lerpFactor = (7.0f * dt).coerceIn(0f, 1f)
+                val lerpFactor = (8.0f * dt).coerceIn(0f, 1f)
                 camX += (desiredCamX - camX) * lerpFactor
                 camY += (desiredCamY - camY) * lerpFactor
                 camZ += (desiredCamZ - camZ) * lerpFactor
@@ -296,60 +311,81 @@ class SoccerRenderer(
         }
     }
 
+    private fun renderSky() {
+        GLES20.glUseProgram(skyProgram)
+        GLES20.glDisable(GLES20.GL_DEPTH_TEST)
+
+        Matrix.setIdentityM(modelMatrix, 0)
+        Matrix.multiplyMM(mvMatrix, 0, viewMatrix, 0, modelMatrix, 0)
+        Matrix.multiplyMM(mvpMatrix, 0, projectionMatrix, 0, mvMatrix, 0)
+
+        GLES20.glUniformMatrix4fv(sMvpMatrixHandle, 1, false, mvpMatrix, 0)
+        GLES20.glActiveTexture(GLES20.GL_TEXTURE0)
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, skyTextureId)
+        GLES20.glUniform1i(sTextureHandle, 0)
+
+        pitchMesh.skyMesh.render(sPositionHandle, -1, sTexCoordinateHandle, true)
+
+        GLES20.glEnable(GLES20.GL_DEPTH_TEST)
+    }
+
     private fun renderPitch() {
-        GLES20.glUseProgram(standardProgram)
+        GLES20.glUseProgram(toonProgram)
         setupCommonUniforms()
 
-        // Render Grass
+        // 1. Vibrant Green Grass
         Matrix.setIdentityM(modelMatrix, 0)
         applyMatrices()
         GLES20.glUniform4f(uColorHandle, 1.0f, 1.0f, 1.0f, 1.0f)
         GLES20.glUniform1i(uUseTextureHandle, 1)
         GLES20.glUniform1f(uSpecularPowerHandle, 16.0f)
-        GLES20.glUniform1f(uMetallicHandle, 0.05f)
+        GLES20.glUniform1f(uMetallicHandle, 0.0f)
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0)
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, pitchTextureId)
         GLES20.glUniform1i(uTextureHandle, 0)
         pitchMesh.grassMesh.render(aPositionHandle, aNormalHandle, aTexCoordinateHandle, true)
 
-        // Render White Lines
-        GLES20.glUniform4f(uColorHandle, 0.95f, 0.95f, 0.95f, 1.0f)
+        // 2. Bright White Pitch Lines
+        GLES20.glUniform4f(uColorHandle, 1.0f, 1.0f, 1.0f, 1.0f)
         GLES20.glUniform1i(uUseTextureHandle, 0)
-        GLES20.glUniform1f(uSpecularPowerHandle, 32.0f)
-        GLES20.glUniform1f(uMetallicHandle, 0.1f)
+        GLES20.glUniform1f(uMetallicHandle, 0.0f)
         pitchMesh.linesMesh.render(aPositionHandle, aNormalHandle, aTexCoordinateHandle, false)
 
-        // Render LED Perimeter Boards
-        GLES20.glUniform4f(uColorHandle, 0.12f, 0.16f, 0.24f, 1.0f)
-        pitchMesh.boardsMesh.render(aPositionHandle, aNormalHandle, aTexCoordinateHandle, false)
+        // 3. Colorful Stadium Billboards
+        GLES20.glUniform4f(uColorHandle, 1.0f, 1.0f, 1.0f, 1.0f)
+        GLES20.glUniform1i(uUseTextureHandle, 1)
+        GLES20.glActiveTexture(GLES20.GL_TEXTURE0)
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, billboardTextureId)
+        GLES20.glUniform1i(uTextureHandle, 0)
+        pitchMesh.boardsMesh.render(aPositionHandle, aNormalHandle, aTexCoordinateHandle, true)
     }
 
     private fun renderGoal() {
-        GLES20.glUseProgram(standardProgram)
+        GLES20.glUseProgram(toonProgram)
         setupCommonUniforms()
 
         Matrix.setIdentityM(modelMatrix, 0)
         applyMatrices()
 
-        // 1. Golden Frame (Specular Metallic Gold)
-        GLES20.glUniform4f(uColorHandle, 1.0f, 0.84f, 0.0f, 1.0f) // Gold RGB
+        // 1. Glossy Vibrant Cartoon Golden Goal Frame
+        GLES20.glUniform4f(uColorHandle, 1.0f, 0.88f, 0.20f, 1.0f)
         GLES20.glUniform1i(uUseTextureHandle, 1)
-        GLES20.glUniform1f(uSpecularPowerHandle, 48.0f)
-        GLES20.glUniform1f(uMetallicHandle, 1.2f)
+        GLES20.glUniform1f(uSpecularPowerHandle, 64.0f)
+        GLES20.glUniform1f(uMetallicHandle, 1.5f)
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0)
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, goldTextureId)
         GLES20.glUniform1i(uTextureHandle, 0)
         goalMesh.frameMesh.render(aPositionHandle, aNormalHandle, aTexCoordinateHandle, true)
 
-        // 2. Goal Net (Alpha Blended)
+        // 2. White Cartoon Net
         GLES20.glEnable(GLES20.GL_BLEND)
         GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA)
-        GLES20.glDisable(GLES20.GL_CULL_FACE) // Double sided net
+        GLES20.glDisable(GLES20.GL_CULL_FACE)
 
-        GLES20.glUniform4f(uColorHandle, 1.0f, 1.0f, 1.0f, 0.85f)
+        GLES20.glUniform4f(uColorHandle, 1.0f, 1.0f, 1.0f, 0.95f)
         GLES20.glUniform1i(uUseTextureHandle, 1)
         GLES20.glUniform1f(uSpecularPowerHandle, 8.0f)
-        GLES20.glUniform1f(uMetallicHandle, 0.1f)
+        GLES20.glUniform1f(uMetallicHandle, 0.0f)
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0)
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, netTextureId)
         GLES20.glUniform1i(uTextureHandle, 0)
@@ -360,23 +396,23 @@ class SoccerRenderer(
     }
 
     private fun renderGoalkeeper() {
-        GLES20.glUseProgram(standardProgram)
+        GLES20.glUseProgram(toonProgram)
         setupCommonUniforms()
 
         Matrix.setIdentityM(modelMatrix, 0)
         Matrix.translateM(modelMatrix, 0, ballPhysics.gkX, 0f, ballPhysics.gkZ)
         applyMatrices()
 
-        // Vibrant Red/Gold Goalkeeper Kit
-        GLES20.glUniform4f(uColorHandle, 0.9f, 0.2f, 0.2f, 1.0f)
+        // Bright Fun Mascot Color (Vivid Cyan & Orange)
+        GLES20.glUniform4f(uColorHandle, 0.06f, 0.72f, 0.98f, 1.0f) // Bright Sky Blue
         GLES20.glUniform1i(uUseTextureHandle, 0)
-        GLES20.glUniform1f(uSpecularPowerHandle, 24.0f)
-        GLES20.glUniform1f(uMetallicHandle, 0.4f)
+        GLES20.glUniform1f(uSpecularPowerHandle, 32.0f)
+        GLES20.glUniform1f(uMetallicHandle, 0.5f)
         goalkeeperMesh.mesh.render(aPositionHandle, aNormalHandle, aTexCoordinateHandle, false)
     }
 
     private fun renderBall() {
-        GLES20.glUseProgram(standardProgram)
+        GLES20.glUseProgram(toonProgram)
         setupCommonUniforms()
 
         Matrix.setIdentityM(modelMatrix, 0)
@@ -388,8 +424,8 @@ class SoccerRenderer(
 
         GLES20.glUniform4f(uColorHandle, 1.0f, 1.0f, 1.0f, 1.0f)
         GLES20.glUniform1i(uUseTextureHandle, 1)
-        GLES20.glUniform1f(uSpecularPowerHandle, 36.0f)
-        GLES20.glUniform1f(uMetallicHandle, 0.6f)
+        GLES20.glUniform1f(uSpecularPowerHandle, 48.0f)
+        GLES20.glUniform1f(uMetallicHandle, 0.4f)
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0)
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, ballTextureId)
         GLES20.glUniform1i(uTextureHandle, 0)
@@ -431,7 +467,6 @@ class SoccerRenderer(
         GLES20.glUniformMatrix4fv(uMVPMatrixHandle, 1, false, mvpMatrix, 0)
         GLES20.glUniformMatrix4fv(uMVMatrixHandle, 1, false, mvMatrix, 0)
 
-        // Calculate Normal Matrix (Transpose of inverse of MV)
         val invMV = FloatArray(16)
         Matrix.invertM(invMV, 0, mvMatrix, 0)
         Matrix.transposeM(normalMatrix, 0, invMV, 0)

@@ -11,11 +11,52 @@ class PitchMesh(
     val grassMesh: Mesh
     val linesMesh: Mesh
     val boardsMesh: Mesh
+    val skyMesh: Mesh
 
     init {
         grassMesh = buildGrass()
         linesMesh = buildLines()
         boardsMesh = buildBoards()
+        skyMesh = buildSkyDome()
+    }
+
+    private fun buildSkyDome(): Mesh {
+        // High backdrop plane spanning behind the stadium
+        val halfW = 40.0f
+        val zBack = 6.0f
+        val yBottom = 0.0f
+        val yTop = 32.0f
+
+        val vertices = floatArrayOf(
+            -halfW, yBottom, zBack,
+            halfW, yBottom, zBack,
+            halfW, yTop, zBack,
+            -halfW, yTop, zBack
+        )
+
+        val normals = floatArrayOf(
+            0f, 0f, -1f,
+            0f, 0f, -1f,
+            0f, 0f, -1f,
+            0f, 0f, -1f
+        )
+
+        val texCoords = floatArrayOf(
+            0f, 1f,
+            1f, 1f,
+            1f, 0f,
+            0f, 0f
+        )
+
+        val indices = shortArrayOf(0, 1, 2, 0, 2, 3)
+
+        return Mesh(
+            Mesh.createFloatBuffer(vertices),
+            Mesh.createFloatBuffer(normals),
+            Mesh.createFloatBuffer(texCoords),
+            Mesh.createShortBuffer(indices),
+            4, 6
+        )
     }
 
     private fun buildGrass(): Mesh {
@@ -61,8 +102,8 @@ class PitchMesh(
         val texCoords = ArrayList<Float>()
         val indices = ArrayList<Short>()
 
-        val y = 0.005f // Slightly above grass to avoid z-fighting
-        val lw = 0.06f // Line half-width
+        val y = 0.008f
+        val lw = 0.08f // Crisp cartoon line width
 
         fun addQuad(x1: Float, z1: Float, x2: Float, z2: Float) {
             val startIdx = (vertices.size / 3).toShort()
@@ -112,8 +153,8 @@ class PitchMesh(
         addQuad(-goalAreaW, goalAreaZ, goalAreaW, goalAreaZ)
 
         // Penalty spot at (0, y, -11)
-        val spotRadius = 0.15f
-        val segs = 16
+        val spotRadius = 0.20f
+        val segs = 20
         val spotCenter = floatArrayOf(0f, y, -11f)
         val spotStartIdx = (vertices.size / 3).toShort()
         vertices.add(spotCenter[0]); vertices.add(spotCenter[1]); vertices.add(spotCenter[2])
@@ -137,7 +178,7 @@ class PitchMesh(
 
         // Penalty Arc
         val arcRadius = 5.0f
-        val arcSegs = 20
+        val arcSegs = 24
         var prevX = 0f
         var prevZ = 0f
         var first = true
@@ -173,7 +214,7 @@ class PitchMesh(
 
         val halfW = pitchWidth / 2f
         val zBack = 4.5f
-        val boardH = 1.0f
+        val boardH = 1.2f
 
         fun addBoardQuad(p1: FloatArray, p2: FloatArray, p3: FloatArray, p4: FloatArray, norm: FloatArray) {
             val startIdx = (vertices.size / 3).toShort()
@@ -181,7 +222,7 @@ class PitchMesh(
             for (i in 0 until 4) {
                 vertices.add(pts[i][0]); vertices.add(pts[i][1]); vertices.add(pts[i][2])
                 normals.add(norm[0]); normals.add(norm[1]); normals.add(norm[2])
-                texCoords.add(if (i == 1 || i == 2) 1f else 0f)
+                texCoords.add(if (i == 1 || i == 2) 4f else 0f)
                 texCoords.add(if (i == 2 || i == 3) 1f else 0f)
             }
             indices.add(startIdx)
@@ -192,7 +233,7 @@ class PitchMesh(
             indices.add((startIdx + 3).toShort())
         }
 
-        // Back LED Billboard Wall behind goal
+        // Back Billboard Wall behind goal
         addBoardQuad(
             floatArrayOf(-halfW, 0f, zBack),
             floatArrayOf(halfW, 0f, zBack),
@@ -201,7 +242,7 @@ class PitchMesh(
             floatArrayOf(0f, 0f, -1f)
         )
 
-        // Left LED Billboard Wall
+        // Left Billboard Wall
         addBoardQuad(
             floatArrayOf(-halfW, 0f, -30f),
             floatArrayOf(-halfW, 0f, zBack),
@@ -210,7 +251,7 @@ class PitchMesh(
             floatArrayOf(1f, 0f, 0f)
         )
 
-        // Right LED Billboard Wall
+        // Right Billboard Wall
         addBoardQuad(
             floatArrayOf(halfW, 0f, zBack),
             floatArrayOf(halfW, 0f, -30f),
