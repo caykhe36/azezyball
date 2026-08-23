@@ -33,6 +33,8 @@ class SoccerGLSurfaceView @JvmOverloads constructor(
         renderMode = RENDERMODE_CONTINUOUSLY
     }
 
+    var onFirstTouch: (() -> Unit)? = null
+
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent): Boolean {
         if (!::renderer.isInitialized) return super.onTouchEvent(event)
@@ -44,6 +46,7 @@ class SoccerGLSurfaceView @JvmOverloads constructor(
 
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
+                onFirstTouch?.invoke()
                 touchDownX = event.x
                 touchDownY = event.y
                 touchDownTime = System.currentTimeMillis()

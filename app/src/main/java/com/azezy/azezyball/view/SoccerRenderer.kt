@@ -60,7 +60,6 @@ class SoccerRenderer(
     private val modelMatrix = FloatArray(16)
     private val mvMatrix = FloatArray(16)
     private val mvpMatrix = FloatArray(16)
-    private val normalMatrix = FloatArray(16)
 
     // Camera (Positioned perfectly behind the ball and centered)
     private var camX = 0f
@@ -76,7 +75,6 @@ class SoccerRenderer(
     // Shader Uniform & Attribute Handles for Toon Program
     private var uMVPMatrixHandle = 0
     private var uMVMatrixHandle = 0
-    private var uNormalMatrixHandle = 0
     private var uLightPosHandle = 0
     private var uColorHandle = 0
     private var uTextureHandle = 0
@@ -165,7 +163,6 @@ class SoccerRenderer(
         )
         uMVPMatrixHandle = GLES20.glGetUniformLocation(toonProgram, "u_MVPMatrix")
         uMVMatrixHandle = GLES20.glGetUniformLocation(toonProgram, "u_MVMatrix")
-        uNormalMatrixHandle = GLES20.glGetUniformLocation(toonProgram, "u_NormalMatrix")
         uLightPosHandle = GLES20.glGetUniformLocation(toonProgram, "u_LightPos")
         uColorHandle = GLES20.glGetUniformLocation(toonProgram, "u_Color")
         uTextureHandle = GLES20.glGetUniformLocation(toonProgram, "u_Texture")
@@ -466,11 +463,6 @@ class SoccerRenderer(
         Matrix.multiplyMM(mvpMatrix, 0, projectionMatrix, 0, mvMatrix, 0)
         GLES20.glUniformMatrix4fv(uMVPMatrixHandle, 1, false, mvpMatrix, 0)
         GLES20.glUniformMatrix4fv(uMVMatrixHandle, 1, false, mvMatrix, 0)
-
-        val invMV = FloatArray(16)
-        Matrix.invertM(invMV, 0, mvMatrix, 0)
-        Matrix.transposeM(normalMatrix, 0, invMV, 0)
-        GLES20.glUniformMatrix4fv(uNormalMatrixHandle, 1, false, normalMatrix, 0)
     }
 
     fun executeKick(vx: Float, vy: Float, vz: Float, curve: Float) {

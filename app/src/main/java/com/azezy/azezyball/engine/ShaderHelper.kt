@@ -62,11 +62,10 @@ object ShaderHelper {
         return programId
     }
 
-    // 1. CARTOON CEL-SHADING (TOON) SHADER
+    // 1. CARTOON CEL-SHADING (TOON) SHADER (HIGH PERFORMANCE)
     val CARTOON_VERTEX_SHADER = """
         uniform mat4 u_MVPMatrix;
         uniform mat4 u_MVMatrix;
-        uniform mat4 u_NormalMatrix;
         
         attribute vec3 a_Position;
         attribute vec3 a_Normal;
@@ -78,7 +77,8 @@ object ShaderHelper {
         
         void main() {
             v_Position = vec3(u_MVMatrix * vec4(a_Position, 1.0));
-            v_Normal = normalize(vec3(u_NormalMatrix * vec4(a_Normal, 0.0)));
+            // GPU high-speed normal transformation
+            v_Normal = normalize(mat3(u_MVMatrix[0].xyz, u_MVMatrix[1].xyz, u_MVMatrix[2].xyz) * a_Normal);
             v_TexCoordinate = a_TexCoordinate;
             gl_Position = u_MVPMatrix * vec4(a_Position, 1.0);
         }

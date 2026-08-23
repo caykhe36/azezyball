@@ -16,6 +16,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
 import com.azezy.azezyball.game.GameManager
 import com.azezy.azezyball.game.ScoreEvent
 import com.azezy.azezyball.sound.SoundEngine
@@ -31,19 +32,18 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var tvScore: TextView
     private lateinit var tvStreak: TextView
-    private lateinit var tvBestScore: TextView
     private lateinit var tvDistance: TextView
     private lateinit var tvControlHint: TextView
+    private lateinit var bottomHintCard: LinearLayout
 
     private lateinit var btnSound: ImageButton
-    private lateinit var btnKeeper: ImageButton
-    private lateinit var btnMode: ImageButton
-    private lateinit var btnHelp: ImageButton
-    private lateinit var btnReset: ImageButton
+    private lateinit var btnSettings: ImageButton
 
     private lateinit var celebrationBanner: LinearLayout
     private lateinit var tvBannerTitle: TextView
     private lateinit var tvBannerSub: TextView
+
+    private var isHintDismissed = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -56,6 +56,7 @@ class MainActivity : AppCompatActivity() {
 
         initViews()
         setupListeners()
+        setupAutoDismissHint()
         updateDashboard(gameManager.currentScore, gameManager.bestScore, gameManager.currentStreak)
     }
 
@@ -65,15 +66,12 @@ class MainActivity : AppCompatActivity() {
 
         tvScore = findViewById(R.id.tvScore)
         tvStreak = findViewById(R.id.tvStreak)
-        tvBestScore = findViewById(R.id.tvBestScore)
         tvDistance = findViewById(R.id.tvDistance)
         tvControlHint = findViewById(R.id.tvControlHint)
+        bottomHintCard = findViewById(R.id.bottomHintCard)
 
         btnSound = findViewById(R.id.btnSound)
-        btnKeeper = findViewById(R.id.btnKeeper)
-        btnMode = findViewById(R.id.btnMode)
-        btnHelp = findViewById(R.id.btnHelp)
-        btnReset = findViewById(R.id.btnReset)
+        btnSettings = findViewById(R.id.btnSettings)
 
         celebrationBanner = findViewById(R.id.celebrationBanner)
         tvBannerTitle = findViewById(R.id.tvBannerTitle)
@@ -81,58 +79,21 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupListeners() {
-        // Sound toggle
+        // Quick Sound toggle
         btnSound.setOnClickListener {
             soundEngine.isSoundEnabled = !soundEngine.isSoundEnabled
             if (soundEngine.isSoundEnabled) {
                 btnSound.setImageResource(R.drawable.ic_volume_up)
-                Toast.makeText(this, "Âm thanh: BẬT", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Âm thanh: BẬT 🔊", Toast.LENGTH_SHORT).show()
             } else {
                 btnSound.setImageResource(R.drawable.ic_volume_off)
-                Toast.makeText(this, "Âm thanh: TẮT", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Âm thanh: TẮT 🔇", Toast.LENGTH_SHORT).show()
             }
         }
 
-        // Goalkeeper toggle
-        btnKeeper.setOnClickListener {
-            val enabled = !glSurfaceView.renderer.ballPhysics.goalkeeperEnabled
-            glSurfaceView.renderer.ballPhysics.goalkeeperEnabled = enabled
-            btnKeeper.setColorFilter(if (enabled) ContextCompat.getColor(this, R.color.gold_primary) else Color.GRAY)
-            val msg = if (enabled) "Thủ môn: BẬT 🧤 (Thử thách tăng cao!)" else "Thủ môn: TẮT"
-            Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
-        }
-
-        // Control Mode toggle
-        btnMode.setOnClickListener {
-            val currentMode = glSurfaceView.renderer.controlMode
-            if (currentMode == ControlMode.SWIPE_FLICK) {
-                glSurfaceView.renderer.controlMode = ControlMode.SLINGSHOT_AIM
-                tvControlHint.text = "Kéo bóng lùi lại để ngắm quỹ đạo và thả tay để sút!"
-                Toast.makeText(this, "Chế độ: Ngắm bắn kéo thả (Slingshot)", Toast.LENGTH_SHORT).show()
-            } else {
-                glSurfaceView.renderer.controlMode = ControlMode.SWIPE_FLICK
-                tvControlHint.text = getString(R.string.swipe_to_kick)
-                Toast.makeText(this, "Chế độ: Vuốt tự do (Swipe & Curve)", Toast.LENGTH_SHORT).show()
-            }
-        }
-
-        // Help dialog
-        btnHelp.setOnClickListener {
-            showHelpDialog()
-        }
-
-        // Reset score
-        btnReset.setOnClickListener {
-            AlertDialog.Builder(this)
-                .setTitle("Làm mới trận đấu?")
-                .setMessage("Bạn có muốn đặt lại điểm số và chuỗi bàn thắng về 0?")
-                .setPositiveButton("Đồng ý") { _, _ ->
-                    gameManager.resetGame()
-                    glSurfaceView.renderer.ballPhysics.reset()
-                    Toast.makeText(this, "Đã làm mới trận đấu!", Toast.LENGTH_SHORT).show()
-                }
-                .setNegativeButton("Hủy", null)
-                .show()
+        // Settings / Options Menu
+        btnSettings.setOnClickListener {
+            showSettingsMenu()
         }
 
         // Game Manager callbacks
@@ -155,11 +116,88 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun setupAutoDismissHint() {
+        // Auto hide after 5 seconds
+        bottomHintCard.postDelayed({
+            dismissHint()
+        }, 5000)
+
+        // Or immediately hide on first touch
+        glSurfaceView.onFirstTouch = {
+            runOnUiThread {
+                dismissHint()
+            }
+        }
+    }
+
+    private fun dismissHint() {
+        if (isHintDismissed || bottomHintCard.visibility != View.VISIBLE) return
+        isHintDismissed = true
+
+        val fadeOut = ObjectAnimator.ofFloat(bottomHintCard, "alpha", 1.0f, 0f).apply {
+            duration = 350
+        }
+        fadeOut.start()
+        bottomHintCard.postDelayed({
+            bottomHintCard.visibility = View.GONE
+        }, 350)
+    }
+
     private fun updateDashboard(score: Int, best: Int, streak: Int) {
         tvScore.text = String.format(Locale.US, "%,d", score)
-        tvBestScore.text = String.format(Locale.US, "%,d", best)
-        tvStreak.text = "x$streak"
-        tvDistance.text = String.format(Locale.US, "Cự ly: %.1fm", gameManager.currentDistance)
+        tvStreak.text = "🔥 x$streak"
+        tvDistance.text = String.format(Locale.US, "🎯 %.1fm", gameManager.currentDistance)
+    }
+
+    private fun showSettingsMenu() {
+        val keeperState = if (glSurfaceView.renderer.ballPhysics.goalkeeperEnabled) "TẮT" else "BẬT"
+        val modeState = if (glSurfaceView.renderer.controlMode == ControlMode.SWIPE_FLICK) "Chuyển sang Kéo ngắm (Slingshot)" else "Chuyển sang Vuốt tự do (Swipe & Curve)"
+
+        val options = arrayOf(
+            "🧤 Thủ môn chắn bóng: $keeperState",
+            "🎮 Chế độ sút: $modeState",
+            "👑 Kỷ lục cao nhất: ${String.format(Locale.US, "%,d điểm", gameManager.bestScore)}",
+            "📖 Hướng dẫn cách chơi",
+            "🔄 Làm mới trận đấu (Reset)"
+        )
+
+        AlertDialog.Builder(this)
+            .setTitle("⚙️ TÙY CHỌN TRẬN ĐẤU")
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> {
+                        val enabled = !glSurfaceView.renderer.ballPhysics.goalkeeperEnabled
+                        glSurfaceView.renderer.ballPhysics.goalkeeperEnabled = enabled
+                        val msg = if (enabled) "Thủ môn: ĐÃ BẬT 🧤" else "Thủ môn: ĐÃ TẮT"
+                        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
+                    }
+                    1 -> {
+                        val currentMode = glSurfaceView.renderer.controlMode
+                        if (currentMode == ControlMode.SWIPE_FLICK) {
+                            glSurfaceView.renderer.controlMode = ControlMode.SLINGSHOT_AIM
+                            tvControlHint.text = "Kéo bóng lùi lại để ngắm quỹ đạo và thả tay để sút!"
+                            Toast.makeText(this, "Chế độ: Ngắm bắn kéo thả (Slingshot)", Toast.LENGTH_SHORT).show()
+                        } else {
+                            glSurfaceView.renderer.controlMode = ControlMode.SWIPE_FLICK
+                            tvControlHint.text = getString(R.string.swipe_to_kick)
+                            Toast.makeText(this, "Chế độ: Vuốt tự do (Swipe & Curve)", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                    2 -> {
+                        Toast.makeText(this, "Kỷ lục chuỗi: x${gameManager.bestStreak} bàn liên tiếp!", Toast.LENGTH_SHORT).show()
+                    }
+                    3 -> {
+                        showHelpDialog()
+                    }
+                    4 -> {
+                        gameManager.resetGame()
+                        glSurfaceView.renderer.ballPhysics.reset()
+                        Toast.makeText(this, "Đã làm mới trận đấu!", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+            .setNegativeButton("Đóng", null)
+            .show()
     }
 
     private fun showGoalCelebration(event: ScoreEvent) {
@@ -168,7 +206,6 @@ class MainActivity : AppCompatActivity() {
         tvBannerTitle.setTextColor(Color.WHITE)
         tvBannerSub.text = String.format(Locale.US, "+%d ĐIỂM (Cự ly %.1fm)", event.pointsAdded, event.distanceMeters)
 
-        // Overshoot Scale Animation
         celebrationBanner.scaleX = 0.3f
         celebrationBanner.scaleY = 0.3f
         celebrationBanner.alpha = 0f
@@ -179,20 +216,19 @@ class MainActivity : AppCompatActivity() {
 
         AnimatorSet().apply {
             playTogether(scaleX, scaleY, alpha)
-            duration = 450
+            duration = 400
             interpolator = OvershootInterpolator(2.0f)
             start()
         }
 
-        // Auto hide after 1.8s
         celebrationBanner.postDelayed({
             val fadeOut = ObjectAnimator.ofFloat(celebrationBanner, "alpha", 1.0f, 0f).apply {
-                duration = 350
+                duration = 300
             }
             fadeOut.start()
             celebrationBanner.postDelayed({
                 celebrationBanner.visibility = View.GONE
-            }, 350)
+            }, 300)
         }, 1800)
     }
 
@@ -232,20 +268,20 @@ class MainActivity : AppCompatActivity() {
             .setTitle("🏆 HƯỚNG DẪN CHƠI AZEZY BALL 3D")
             .setMessage(
                 "⚽ 1. CÁCH SÚT BÓNG:\n" +
-                "• Chế độ Vuốt (Mặc định): Đặt ngón tay lên bóng và vuốt nhanh về phía khung thành vàng. Vuốt cong hình vòng cung để tạo đường bóng xoáy bẻ hướng (Hiệu ứng Magnus)!\n" +
+                "• Chế độ Vuốt: Đặt ngón tay lên bóng và vuốt thẳng/cong về phía khung thành vàng. Vuốt cong hình vòng cung để tạo đường bóng xoáy bẻ hướng (Magnus effect)!\n" +
                 "• Chế độ Kéo thả: Kéo bóng lùi về sau để căn góc và lực với đường line 3D hiển thị trước.\n\n" +
                 "🌟 2. TÍNH ĐIỂM & THỬ THÁCH:\n" +
                 "• Ghi bàn từ cự ly càng xa nhận càng nhiều điểm thưởng.\n" +
                 "• Sút trúng góc chữ A (Top Corner) được cộng thêm +150 điểm thưởng!\n" +
                 "• Chuỗi ghi bàn liên tiếp kích hoạt hệ số nhân điểm (Combo x2, x3, x5)!\n" +
-                "• Bật nút Thủ môn để tăng thử thách với thủ môn di chuyển chắn bóng!"
+                "• Bật nút Thủ môn trong Menu để tăng độ thử thách!"
             )
             .setPositiveButton("Đã hiểu, Bắt đầu!", null)
             .show()
     }
 
     private fun hideSystemUI() {
-        androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window, false)
+        WindowCompat.setDecorFitsSystemWindows(window, false)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             window.insetsController?.let {
                 it.hide(WindowInsets.Type.statusBars() or WindowInsets.Type.navigationBars())
