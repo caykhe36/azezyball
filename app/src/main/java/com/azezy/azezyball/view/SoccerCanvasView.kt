@@ -515,10 +515,8 @@ class SoccerCanvasView @JvmOverloads constructor(
             return
         }
 
-        flightTime += dt
-
-        // Magnus effect curve force
-        ballVx += ballSpinY * ballVz * 0.45f * dt
+        // Gentle realistic Magnus curve force
+        ballVx += ballSpinY * ballVz * 0.08f * dt
 
         // Gravity
         ballVy -= 9.8f * dt
@@ -748,28 +746,30 @@ class SoccerCanvasView @JvmOverloads constructor(
     private fun handleSwipeKick(endX: Float, endY: Float) {
         val dx = endX - touchDownX
         val dy = endY - touchDownY
-        val dt = (System.currentTimeMillis() - touchDownTime).coerceAtLeast(40).toFloat() / 1000f
+        val dt = (System.currentTimeMillis() - touchDownTime).coerceIn(40L, 450L).toFloat() / 1000f
 
-        if (dy < -35f) {
+        if (dy < -25f) {
             val screenH = height.toFloat()
             val screenW = width.toFloat()
 
-            val vyNorm = (-dy / screenH) / dt
-            val vxNorm = (dx / screenW) / dt
+            val forwardSpeedNorm = (-dy / screenH) / dt
+            val vz = (13.5f + forwardSpeedNorm * 2.8f).coerceIn(13.5f, 25.0f)
+            val vy = (4.2f + forwardSpeedNorm * 1.5f).coerceIn(4.0f, 8.5f)
 
-            val vz = (13.5f + vyNorm * 3.2f).coerceIn(14f, 26f)
-            val vy = (4.5f + vyNorm * 1.6f).coerceIn(4.2f, 8.8f)
-            val vx = (vxNorm * 5.5f + (dx / screenW) * 7.5f).coerceIn(-6.5f, 6.5f)
+            // Direct 1-to-1 horizontal velocity: Vuốt trái sang trái, vuốt phải sang phải
+            val horizontalRatio = dx / (screenW * 0.45f)
+            val vx = (horizontalRatio * 6.0f).coerceIn(-6.0f, 6.0f)
 
+            // Gentle natural curve (Magnus effect)
             var curve = 0f
-            if (touchPoints.size >= 4) {
+            if (touchPoints.size >= 5) {
                 val midIdx = touchPoints.size / 2
                 val midPoint = touchPoints[midIdx]
                 val t = if (abs(dy) > 1f) (midPoint.y - touchDownY) / dy else 0.5f
                 val expectedX = touchDownX + t * dx
                 val deviation = midPoint.x - expectedX
-                curve = (deviation / screenW) * 30.0f
-                curve = curve.coerceIn(-5.5f, 5.5f)
+                curve = (deviation / screenW) * 4.0f
+                curve = curve.coerceIn(-2.5f, 2.5f)
             }
 
             executeKick(vx, vy, vz, curve)
@@ -779,25 +779,25 @@ class SoccerCanvasView @JvmOverloads constructor(
 
     private fun updateAiming(curX: Float, curY: Float) {
         val dx = curX - touchDownX
-        val dy = curY - touchDownY
         val screenH = height.toFloat()
         val screenW = width.toFloat()
 
-        val pullY = dy.coerceAtLeast(0f) / screenH
-        val pullX = -dx / screenW
+        // Kéo ngắm: Kéo bóng lùi xuống và sang trái/phải để ngắm bắn
+        val pullY = (curY - touchDownY).coerceAtLeast(0f) / screenH
+        val pullX = dx / (screenW * 0.45f)
 
-        val power = (pullY * 3.2f).coerceIn(0.2f, 1.2f)
-        aimVz = 13f + power * 12f
+        val power = (pullY * 3.0f).coerceIn(0.2f, 1.2f)
+        aimVz = 13.0f + power * 12.0f
         aimVy = 4.2f + power * 4.2f
-        aimVx = pullX * 11.0f
-        aimCurve = (pullX * 3.5f).coerceIn(-3.5f, 3.5f)
+        aimVx = (pullX * 6.0f).coerceIn(-6.0f, 6.0f)
+        aimCurve = (pullX * 1.0f).coerceIn(-2.0f, 2.0f)
         invalidate()
     }
 
     private fun handleSlingshotRelease(endX: Float, endY: Float) {
         isAiming = false
         val dy = endY - touchDownY
-        if (dy > 30f) {
+        if (dy > 25f) {
             updateAiming(endX, endY)
             executeKick(aimVx, aimVy, aimVz, aimCurve)
         } else {
