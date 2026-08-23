@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="gold_primary">#FFD700</color>
+    <color name="gold_dark">#B8860B</color>
+    <color name="gold_light">#FFF8DC</color>
+    <color name="gold_accent">#FFA500</color>
+    <color name="obsidian_bg">#0A0E17</color>
+    <color name="obsidian_card">#131B2E</color>
+    <color name="obsidian_card_stroke">#2A3B5C</color>
+    <color name="green_pitch">#1B5E20</color>
+    <color name="green_pitch_light">#2E7D32</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="black">#FF000000</color>
+    <color name="text_muted">#90A4AE</color>
+    <color name="red_miss">#EF5350</color>
+    <color name="gold_glow">#40FFD700</color>
+</resources>
