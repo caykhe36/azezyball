@@ -8,9 +8,9 @@
     android:background="@color/cartoon_sky"
     tools:context=".MainActivity">
 
-    <!-- 3D True OpenGL ES Cartoon Game Surface -->
-    <com.azezy.azezyball.view.SoccerGLSurfaceView
-        android:id="@+id/glSurfaceView"
+    <!-- 3D Ultra Smooth Cartoon Soccer Canvas Game Surface -->
+    <com.azezy.azezyball.view.SoccerCanvasView
+        android:id="@+id/soccerCanvasView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         app:layout_constraintBottom_toBottomOf="parent"

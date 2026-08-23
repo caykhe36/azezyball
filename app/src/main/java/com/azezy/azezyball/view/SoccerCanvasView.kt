@@ -41,11 +41,11 @@ class SoccerCanvasView @JvmOverloads constructor(
     var goalkeeperEnabled = false
     var onFirstTouch: (() -> Unit)? = null
 
-    // 3D Physics Simulation Coordinates
-    val ballRadius = 0.22f // meters
+    // 3D Physics Simulation Coordinates (Meters)
+    val ballRadius = 0.22f
     var ballX = 0f
     var ballY = ballRadius
-    var ballZ = 0f // 0m is starting spot, 10.5m is the goal line!
+    var ballZ = 0f // 0m is penalty spot, 10.5m is the goal line
 
     var ballVx = 0f
     var ballVy = 0f
@@ -57,19 +57,24 @@ class SoccerCanvasView @JvmOverloads constructor(
     private var flightTime = 0f
     private var postHitSoundPlayed = false
 
-    // Goal Dimensions in 3D
+    // 3D Goal Dimensions
     val goalZ = 10.5f
     val goalHalfWidth = 2.6f
     val goalHeight = 2.4f
     val goalDepth = 1.8f
 
-    // Goalkeeper 3D Properties
+    // 3D Goalkeeper Properties
     var gkX = 0f
     var gkSpeed = 2.2f
     var gkDir = 1f
     val gkWidth = 1.4f
     val gkHeight = 1.8f
     val gkZ = 10.2f
+
+    // 3D Cinematic Camera Tracking
+    private var camFollowX = 0f
+    private var camFollowY = 0f
+    private var camFollowZ = 0f
 
     // Touch & Aiming
     private var touchDownX = 0f
@@ -97,19 +102,24 @@ class SoccerCanvasView @JvmOverloads constructor(
     }
     private val particles = Array(120) { Particle() }
 
-    // Pre-allocated Paints to guarantee ZERO Garbage Collection during onDraw
+    // Pre-allocated Paints (Zero allocations in onDraw)
     private val skyPaint = Paint()
     private val sunPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val cloudPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val stadiumPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val crowdPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val boardPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val grassPaint1 = Paint()
     private val grassPaint2 = Paint()
     private val linePaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val goldPostPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val goldDarkPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val goldHighlightPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val netPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val netBackFillPaint = Paint()
     private val shadowPaint = Paint(Paint.ANTI_ALIAS_FLAG)
-    private val ballWhitePaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val ballBasePaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val ball3DShadePaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val ballBlackPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val ballGoldSeamPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val ballGlossPaint = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -136,6 +146,9 @@ class SoccerCanvasView @JvmOverloads constructor(
     private fun initPaints() {
         sunPaint.color = Color.rgb(253, 224, 71)
         cloudPaint.color = Color.argb(220, 255, 255, 255)
+        stadiumPaint.color = Color.rgb(30, 41, 59)
+        crowdPaint.color = Color.rgb(51, 65, 85)
+        boardPaint.color = Color.rgb(79, 70, 229) // Indigo LED boards
 
         grassPaint1.color = Color.rgb(74, 222, 128) // Bright Lime Green
         grassPaint2.color = Color.rgb(34, 197, 94)  // Vivid Emerald Green
@@ -143,7 +156,7 @@ class SoccerCanvasView @JvmOverloads constructor(
         linePaint.apply {
             color = Color.argb(220, 255, 255, 255)
             style = Paint.Style.STROKE
-            strokeWidth = 5f
+            strokeWidth = 4.5f
         }
 
         goldPostPaint.apply {
@@ -151,26 +164,31 @@ class SoccerCanvasView @JvmOverloads constructor(
             style = Paint.Style.FILL
         }
 
+        goldDarkPaint.apply {
+            color = Color.rgb(217, 119, 6)
+            style = Paint.Style.FILL
+        }
+
         goldHighlightPaint.apply {
             color = Color.rgb(254, 240, 138)
             style = Paint.Style.STROKE
-            strokeWidth = 3f
+            strokeWidth = 3.5f
         }
 
         netPaint.apply {
             color = Color.argb(160, 255, 255, 255)
             style = Paint.Style.STROKE
-            strokeWidth = 2.5f
+            strokeWidth = 2.2f
         }
 
         netBackFillPaint.color = Color.argb(45, 15, 23, 42)
 
         shadowPaint.apply {
-            color = Color.argb(70, 0, 0, 0)
+            color = Color.argb(80, 5, 46, 22)
             style = Paint.Style.FILL
         }
 
-        ballWhitePaint.apply {
+        ballBasePaint.apply {
             color = Color.WHITE
             style = Paint.Style.FILL
         }
@@ -187,17 +205,17 @@ class SoccerCanvasView @JvmOverloads constructor(
         }
 
         ballGlossPaint.apply {
-            color = Color.argb(140, 255, 255, 255)
+            color = Color.argb(170, 255, 255, 255)
             style = Paint.Style.FILL
         }
 
         gkBodyPaint.apply {
-            color = Color.rgb(14, 165, 233) // Bright Sky Cyan
+            color = Color.rgb(14, 165, 233)
             style = Paint.Style.FILL
         }
 
         gkGlovePaint.apply {
-            color = Color.rgb(249, 115, 22) // Bright Orange
+            color = Color.rgb(249, 115, 22)
             style = Paint.Style.FILL
         }
 
@@ -209,7 +227,7 @@ class SoccerCanvasView @JvmOverloads constructor(
         trajectoryPaint.apply {
             color = Color.rgb(251, 191, 36)
             style = Paint.Style.STROKE
-            strokeWidth = 6f
+            strokeWidth = 7f
             pathEffect = DashPathEffect(floatArrayOf(16f, 12f), 0f)
         }
 
@@ -218,14 +236,13 @@ class SoccerCanvasView @JvmOverloads constructor(
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
-        // Sky gradient
         skyPaint.shader = LinearGradient(
             0f, 0f, 0f, h * 0.45f,
             intArrayOf(
                 Color.rgb(14, 165, 233),  // Azure
                 Color.rgb(56, 189, 248),  // Sky Blue
-                Color.rgb(186, 230, 253), // Soft Cyan
-                Color.rgb(254, 240, 138)  // Warm Golden Horizon
+                Color.rgb(186, 230, 253), // Soft Warm Cyan
+                Color.rgb(254, 240, 138)  // Horizon Glow
             ),
             floatArrayOf(0f, 0.4f, 0.85f, 1.0f),
             Shader.TileMode.CLAMP
@@ -244,20 +261,34 @@ class SoccerCanvasView @JvmOverloads constructor(
 
         val w = width.toFloat()
         val h = height.toFloat()
-        val horizonY = h * 0.40f
-        val pitchCenterBottomY = h * 0.82f
-        val pitchCenterBottomX = w * 0.5f
 
-        // 1. Draw Bright Cartoon Sky
+        // 3D Cinematic Camera Tracking Interpolation
+        if (ballState == BallState.FLYING || ballState == BallState.SCORED || ballState == BallState.MISSED) {
+            camFollowX += (ballX * 0.35f - camFollowX) * 0.12f
+            camFollowY += (ballY * 0.20f - camFollowY) * 0.12f
+            camFollowZ += (ballZ * 0.15f - camFollowZ) * 0.12f
+        } else {
+            camFollowX += (0f - camFollowX) * 0.15f
+            camFollowY += (0f - camFollowY) * 0.15f
+            camFollowZ += (0f - camFollowZ) * 0.15f
+        }
+
+        val horizonY = h * 0.40f + (camFollowY * 18f)
+        val pitchCenterBottomY = h * 0.84f + (camFollowY * 15f)
+        val pitchCenterBottomX = w * 0.5f - (camFollowX * 22f)
+
+        // 1. Draw Bright 3D Cartoon Sky Dome & Clouds
         canvas.drawRect(0f, 0f, w, horizonY, skyPaint)
-        // Sun
         canvas.drawCircle(w * 0.82f, horizonY * 0.35f, 32f, sunPaint)
-        // Clouds
-        drawCloud(canvas, w * 0.2f, horizonY * 0.4f, 1.0f)
-        drawCloud(canvas, w * 0.65f, horizonY * 0.3f, 0.85f)
+        drawCloud(canvas, w * 0.18f - camFollowX * 10f, horizonY * 0.38f, 1.0f)
+        drawCloud(canvas, w * 0.68f - camFollowX * 10f, horizonY * 0.28f, 0.85f)
 
-        // 2. Draw 3D Cartoon Perspective Pitch (Emerald Grass Lawn Stripes)
-        val numStripes = 8
+        // 2. Draw 3D Stadium Stands & Grandstands
+        canvas.drawRect(0f, horizonY - 26f, w, horizonY, stadiumPaint)
+        canvas.drawRect(0f, horizonY - 14f, w, horizonY, crowdPaint)
+
+        // 3. Draw 3D Perspective Pitch (Emerald Grass Lawn Stripes)
+        val numStripes = 9
         val grassH = h - horizonY
         for (i in 0 until numStripes) {
             val t1 = (i.toFloat() / numStripes)
@@ -268,25 +299,32 @@ class SoccerCanvasView @JvmOverloads constructor(
             canvas.drawRect(0f, y1, w, y2, paint)
         }
 
-        // Perspective Conversion Helper: (3D World -> 2D Screen)
-        val fov = 7.5f
+        // 3D Perspective Projection Function: (World 3D -> Screen 2D)
+        val fov = 7.2f
         fun projectX(wx: Float, wz: Float): Float {
-            val scale = fov / (fov + wz)
-            return pitchCenterBottomX + wx * (w * 0.28f) * scale
+            val scale = fov / (fov + wz + camFollowZ)
+            return pitchCenterBottomX + wx * (w * 0.29f) * scale
         }
         fun projectY(wy: Float, wz: Float): Float {
-            val scale = fov / (fov + wz)
+            val scale = fov / (fov + wz + camFollowZ)
             val groundY = horizonY + (pitchCenterBottomY - horizonY) * scale
-            return groundY - wy * (w * 0.28f) * scale
+            return groundY - wy * (w * 0.29f) * scale
         }
         fun projectScale(wz: Float): Float {
-            return fov / (fov + wz)
+            return fov / (fov + wz + camFollowZ)
         }
 
-        // 3. Draw Pitch Markings (Penalty Box, Penalty Spot, Goal Line)
+        // 4. 3D LED Stadium Advertising Boards along Goal Line
+        val bLeftX = projectX(-6.5f, goalZ + 0.5f)
+        val bRightX = projectX(6.5f, goalZ + 0.5f)
+        val bBottomY = projectY(0f, goalZ + 0.5f)
+        val bTopY = projectY(0.7f, goalZ + 0.5f)
+        canvas.drawRect(bLeftX, bTopY, bRightX, bBottomY, boardPaint)
+
+        // 5. Draw 3D Pitch Lines (Goal line, Penalty area, Penalty spot)
         val goalLineY = projectY(0f, goalZ)
         linePaint.strokeWidth = 4f
-        canvas.drawLine(w * 0.12f, goalLineY, w * 0.88f, goalLineY, linePaint)
+        canvas.drawLine(w * 0.10f, goalLineY, w * 0.90f, goalLineY, linePaint)
 
         // 16m50 Penalty Box
         val pBoxLeftX = projectX(-3.8f, goalZ)
@@ -298,12 +336,12 @@ class SoccerCanvasView @JvmOverloads constructor(
         canvas.drawLine(pBoxRightX, goalLineY, pBoxFrontRightX, pBoxFrontY, linePaint)
         canvas.drawLine(pBoxFrontLeftX, pBoxFrontY, pBoxFrontRightX, pBoxFrontY, linePaint)
 
-        // Penalty Spot (Where ball starts at z = 0m)
+        // Penalty Spot (z = 0m)
         val spotX = projectX(0f, 0f)
         val spotY = projectY(0f, 0f)
-        canvas.drawCircle(spotX, spotY, 7f, linePaint)
+        canvas.drawCircle(spotX, spotY, 7.5f, linePaint)
 
-        // 4. Draw 3D Golden Goal (Back Net, Frame, Net Lattice)
+        // 6. Draw 3D Golden Goal (Cylindrical Metallic Posts + 3D Depth Net)
         val gLeftX = projectX(-goalHalfWidth, goalZ)
         val gRightX = projectX(goalHalfWidth, goalZ)
         val gBottomY = projectY(0f, goalZ)
@@ -314,7 +352,7 @@ class SoccerCanvasView @JvmOverloads constructor(
         val gBackBottomY = projectY(0f, goalZ + goalDepth)
         val gBackTopY = projectY(goalHeight, goalZ + goalDepth)
 
-        // Net Back Plane Fill
+        // 3D Net Back Shade Fill
         netPath.reset()
         netPath.moveTo(gBackLeftX, gBackBottomY)
         netPath.lineTo(gBackRightX, gBackBottomY)
@@ -323,7 +361,7 @@ class SoccerCanvasView @JvmOverloads constructor(
         netPath.close()
         canvas.drawPath(netPath, netBackFillPaint)
 
-        // Net Grid Lines
+        // 3D Net Lattice
         val netCols = 10
         val netRows = 6
         for (c in 0..netCols) {
@@ -339,7 +377,7 @@ class SoccerCanvasView @JvmOverloads constructor(
             canvas.drawLine(gBackLeftX, nyBack, gBackRightX, nyBack, netPaint)
         }
 
-        // Side Net Panels
+        // Side 3D Net Walls
         netPath.reset()
         netPath.moveTo(gLeftX, gBottomY)
         netPath.lineTo(gBackLeftX, gBackBottomY)
@@ -356,7 +394,13 @@ class SoccerCanvasView @JvmOverloads constructor(
         netPath.close()
         canvas.drawPath(netPath, netPaint)
 
-        // Glossy Golden Goal Frame Posts & Crossbar
+        // 3D Depth Support Bars (From front posts to back ground)
+        canvas.drawLine(gLeftX, gTopY, gBackLeftX, gBackTopY, goldDarkPaint)
+        canvas.drawLine(gRightX, gTopY, gBackRightX, gBackTopY, goldDarkPaint)
+        canvas.drawLine(gLeftX, gBottomY, gBackLeftX, gBackBottomY, goldDarkPaint)
+        canvas.drawLine(gRightX, gBottomY, gBackRightX, gBackBottomY, goldDarkPaint)
+
+        // 3D Cylindrical Golden Posts & Crossbar
         val postThickness = 14f * projectScale(goalZ)
         // Left Post
         rectF.set(gLeftX - postThickness / 2f, gTopY - postThickness / 2f, gLeftX + postThickness / 2f, gBottomY)
@@ -373,7 +417,7 @@ class SoccerCanvasView @JvmOverloads constructor(
         canvas.drawRoundRect(rectF, 6f, 6f, goldPostPaint)
         canvas.drawLine(gLeftX, gTopY - postThickness / 4f, gRightX, gTopY - postThickness / 4f, goldHighlightPaint)
 
-        // 5. Draw Mascot Goalkeeper (If active)
+        // 7. Draw Mascot Goalkeeper (If active)
         if (goalkeeperEnabled) {
             val gkScreenX = projectX(gkX, gkZ)
             val gkScreenY = projectY(0f, gkZ)
@@ -385,19 +429,19 @@ class SoccerCanvasView @JvmOverloads constructor(
             rectF.set(gkScreenX - gkW * 0.4f, gkScreenY - 6f, gkScreenX + gkW * 0.4f, gkScreenY + 6f)
             canvas.drawOval(rectF, shadowPaint)
 
-            // Body
+            // 3D Shaded Mascot Body
             rectF.set(gkScreenX - gkW * 0.35f, gkScreenY - gkH * 0.75f, gkScreenX + gkW * 0.35f, gkScreenY - gkH * 0.15f)
             canvas.drawRoundRect(rectF, 12f, 12f, gkBodyPaint)
 
             // Head
             canvas.drawCircle(gkScreenX, gkScreenY - gkH * 0.85f, gkW * 0.26f, gkHeadPaint)
 
-            // Big Gloves
+            // Big Animated Gloves
             canvas.drawCircle(gkScreenX - gkW * 0.52f, gkScreenY - gkH * 0.55f, gkW * 0.20f, gkGlovePaint)
             canvas.drawCircle(gkScreenX + gkW * 0.52f, gkScreenY - gkH * 0.55f, gkW * 0.20f, gkGlovePaint)
         }
 
-        // 6. Draw Trajectory Line when Aiming
+        // 8. Draw 3D Trajectory Aiming Line
         if (isAiming && (ballState == BallState.IDLE || ballState == BallState.AIMING)) {
             var simX = ballX
             var simY = ballY
@@ -407,9 +451,9 @@ class SoccerCanvasView @JvmOverloads constructor(
             var simVz = aimVz
             val path = Path()
             path.moveTo(projectX(simX, simZ), projectY(simY, simZ))
-            for (i in 0 until 18) {
+            for (i in 0 until 20) {
                 simVy -= 9.8f * 0.04f
-                simVx += aimCurve * 0.8f * 0.04f
+                simVx += aimCurve * 0.08f * 0.04f
                 simX += simVx * 0.04f
                 simY += simVy * 0.04f
                 simZ += simVz * 0.04f
@@ -419,25 +463,35 @@ class SoccerCanvasView @JvmOverloads constructor(
             canvas.drawPath(path, trajectoryPaint)
         }
 
-        // 7. Draw 3D Cartoon Soccer Ball & Dynamic Shadow
+        // 9. Draw Volumetric 3D Soccer Ball & Dynamic Ground Shadow
         val bScale = projectScale(ballZ)
         val bScreenX = projectX(ballX, ballZ)
         val bScreenY = projectY(ballY, ballZ)
         val bGroundY = projectY(0f, ballZ)
         val bRadius = (w * 0.09f) * bScale
 
-        // Dynamic Shadow on the grass
-        val shadowHeightFactor = (1f - (ballY / 4.0f)).coerceIn(0.2f, 1.0f)
-        val shadowRadiusX = bRadius * 1.1f * shadowHeightFactor
-        val shadowRadiusY = bRadius * 0.35f * shadowHeightFactor
+        // Dynamic 3D Ground Shadow (Shrinks and softens with height)
+        val shadowHeightFactor = (1f - (ballY / 3.8f)).coerceIn(0.25f, 1.0f)
+        val shadowRadiusX = bRadius * 1.15f * shadowHeightFactor
+        val shadowRadiusY = bRadius * 0.38f * shadowHeightFactor
         rectF.set(bScreenX - shadowRadiusX, bGroundY - shadowRadiusY, bScreenX + shadowRadiusX, bGroundY + shadowRadiusY)
-        shadowPaint.alpha = (75 * shadowHeightFactor).toInt()
+        shadowPaint.alpha = (85 * shadowHeightFactor).toInt()
         canvas.drawOval(rectF, shadowPaint)
 
-        // Ball Body
-        canvas.drawCircle(bScreenX, bScreenY, bRadius, ballWhitePaint)
+        // 3D Sphere Radial Shading
+        ball3DShadePaint.shader = RadialGradient(
+            bScreenX - bRadius * 0.35f, bScreenY - bRadius * 0.35f, bRadius * 1.25f,
+            intArrayOf(
+                Color.rgb(255, 255, 255), // Top lit white
+                Color.rgb(226, 232, 240), // Mid white
+                Color.rgb(148, 163, 184)  // Ambient occlusion shadow base
+            ),
+            floatArrayOf(0f, 0.6f, 1.0f),
+            Shader.TileMode.CLAMP
+        )
+        canvas.drawCircle(bScreenX, bScreenY, bRadius, ball3DShadePaint)
 
-        // Comic Pentagons rotating with ball
+        // Rotating 3D Pentagons with perspective foreshortening
         canvas.save()
         canvas.translate(bScreenX, bScreenY)
         canvas.rotate(ballRotationAngle)
@@ -460,7 +514,7 @@ class SoccerCanvasView @JvmOverloads constructor(
             canvas.drawPath(ballPatchPath, ballGoldSeamPaint)
         }
 
-        // Center Gold Star Patch
+        // Center Gold Star Emblem
         ballPatchPath.reset()
         for (p in 0 until 5) {
             val pAngle = (p * (360.0 / 5) - 18.0) * (PI / 180.0)
@@ -472,11 +526,11 @@ class SoccerCanvasView @JvmOverloads constructor(
         canvas.drawPath(ballPatchPath, goldPostPaint)
         canvas.drawPath(ballPatchPath, ballGoldSeamPaint)
 
-        // Glossy Specular Highlight
-        canvas.drawCircle(-bRadius * 0.35f, -bRadius * 0.35f, bRadius * 0.24f, ballGlossPaint)
+        // Glossy Specular 3D Dot
+        canvas.drawCircle(-bRadius * 0.35f, -bRadius * 0.35f, bRadius * 0.22f, ballGlossPaint)
         canvas.restore()
 
-        // 8. Draw Celebration Confetti Particles
+        // 10. Draw Celebration Rainbow Confetti
         for (p in particles) {
             if (p.active) {
                 particlePaint.color = p.color
@@ -485,7 +539,6 @@ class SoccerCanvasView @JvmOverloads constructor(
             }
         }
 
-        // Request continuous smooth hardware frame rate
         invalidate()
     }
 
@@ -515,27 +568,29 @@ class SoccerCanvasView @JvmOverloads constructor(
             return
         }
 
+        flightTime += dt
+
         // Gentle realistic Magnus curve force
         ballVx += ballSpinY * ballVz * 0.08f * dt
 
         // Gravity
-        ballVy -= 9.8f * dt
+        ballVy -= 9.81f * dt
 
         // Air drag
         ballVx *= (1f - 0.05f * dt)
         ballVy *= (1f - 0.05f * dt)
         ballVz *= (1f - 0.05f * dt)
 
-        // Integrate position
+        // Integrate 3D position
         ballX += ballVx * dt
         ballY += ballVy * dt
         ballZ += ballVz * dt
 
-        // Rotation
+        // 3D Visual Rotation
         val speed = hypot(ballVx.toDouble(), ballVz.toDouble()).toFloat()
         ballRotationAngle += speed * 35f * dt
 
-        // Ground Collision
+        // Ground Collision & Bounce
         if (ballY <= ballRadius) {
             ballY = ballRadius
             if (abs(ballVy) > 0.4f) {
@@ -549,7 +604,7 @@ class SoccerCanvasView @JvmOverloads constructor(
             }
         }
 
-        // Goalkeeper Collision
+        // Goalkeeper 3D Collision
         if (goalkeeperEnabled && ballState == BallState.FLYING && ballZ >= (gkZ - 0.3f) && ballZ <= (gkZ + 0.3f)) {
             val inGkX = abs(ballX - gkX) < (gkWidth / 2f + ballRadius)
             val inGkY = ballY >= 0f && ballY <= (gkHeight + ballRadius)
@@ -566,9 +621,9 @@ class SoccerCanvasView @JvmOverloads constructor(
             }
         }
 
-        // Goal Posts & Crossbar Collision
+        // Goal Posts & Crossbar 3D Collision
         if (abs(ballZ - goalZ) < (0.15f + ballRadius) && ballY <= (goalHeight + ballRadius + 0.1f)) {
-            // Left Post: x = -goalHalfWidth, y in [0, goalHeight]
+            // Left Post: x = -goalHalfWidth
             if (abs(ballX - (-goalHalfWidth)) < (0.12f + ballRadius) && ballY <= goalHeight) {
                 ballVx = abs(ballVx) * 0.75f + 1.5f
                 ballVz = -ballVz * 0.65f
@@ -577,7 +632,7 @@ class SoccerCanvasView @JvmOverloads constructor(
                     soundEngine.playPostHit()
                 }
             }
-            // Right Post: x = goalHalfWidth, y in [0, goalHeight]
+            // Right Post: x = goalHalfWidth
             if (abs(ballX - goalHalfWidth) < (0.12f + ballRadius) && ballY <= goalHeight) {
                 ballVx = -abs(ballVx) * 0.75f - 1.5f
                 ballVz = -ballVz * 0.65f
@@ -586,7 +641,7 @@ class SoccerCanvasView @JvmOverloads constructor(
                     soundEngine.playPostHit()
                 }
             }
-            // Crossbar: y = goalHeight, x in [-goalHalfWidth, goalHalfWidth]
+            // Top Crossbar: y = goalHeight
             if (abs(ballX) <= goalHalfWidth + 0.1f && abs(ballY - goalHeight) < (0.12f + ballRadius)) {
                 ballVy = -abs(ballVy) * 0.70f
                 ballVz = -ballVz * 0.65f
@@ -597,7 +652,7 @@ class SoccerCanvasView @JvmOverloads constructor(
             }
         }
 
-        // Goal Detection
+        // 3D Goal Detection
         if (ballState == BallState.FLYING) {
             if (ballZ >= goalZ) {
                 val insideWidth = abs(ballX) < (goalHalfWidth - 0.15f)
@@ -617,7 +672,7 @@ class SoccerCanvasView @JvmOverloads constructor(
             }
         }
 
-        // Settle ball inside net
+        // Settle ball inside 3D net
         if (ballState == BallState.SCORED) {
             if (ballZ >= (goalZ + goalDepth - ballRadius)) {
                 ballZ = goalZ + goalDepth - ballRadius
@@ -674,7 +729,7 @@ class SoccerCanvasView @JvmOverloads constructor(
                     p.active = false
                     continue
                 }
-                p.vy += 450f * dt // Gravity
+                p.vy += 450f * dt
                 p.x += p.vx * dt
                 p.y += p.vy * dt
                 p.alpha = ((p.life / p.maxLife) * 255).toInt().coerceIn(0, 255)
@@ -748,6 +803,7 @@ class SoccerCanvasView @JvmOverloads constructor(
         val dy = endY - touchDownY
         val dt = (System.currentTimeMillis() - touchDownTime).coerceIn(40L, 450L).toFloat() / 1000f
 
+        // Sút bóng khi vuốt lên (dy < -25px)
         if (dy < -25f) {
             val screenH = height.toFloat()
             val screenW = width.toFloat()
@@ -756,41 +812,31 @@ class SoccerCanvasView @JvmOverloads constructor(
             val vz = (13.5f + forwardSpeedNorm * 2.8f).coerceIn(13.5f, 25.0f)
             val vy = (4.2f + forwardSpeedNorm * 1.5f).coerceIn(4.0f, 8.5f)
 
-            // Direct 1-to-1 horizontal velocity: Vuốt trái sang trái, vuốt phải sang phải
+            // ĐỒNG BỘ 1-1 CHUẨN XÁC: Vuốt trái sang TRÁI (vx < 0), vuốt phải sang PHẢI (vx > 0)
             val horizontalRatio = dx / (screenW * 0.45f)
             val vx = (horizontalRatio * 6.0f).coerceIn(-6.0f, 6.0f)
 
-            // Gentle natural curve (Magnus effect)
-            var curve = 0f
-            if (touchPoints.size >= 5) {
-                val midIdx = touchPoints.size / 2
-                val midPoint = touchPoints[midIdx]
-                val t = if (abs(dy) > 1f) (midPoint.y - touchDownY) / dy else 0.5f
-                val expectedX = touchDownX + t * dx
-                val deviation = midPoint.x - expectedX
-                curve = (deviation / screenW) * 4.0f
-                curve = curve.coerceIn(-2.5f, 2.5f)
-            }
-
-            executeKick(vx, vy, vz, curve)
+            executeKick(vx, vy, vz, 0f)
         }
         touchPoints.clear()
     }
 
     private fun updateAiming(curX: Float, curY: Float) {
         val dx = curX - touchDownX
+        val dy = curY - touchDownY
         val screenH = height.toFloat()
         val screenW = width.toFloat()
 
-        // Kéo ngắm: Kéo bóng lùi xuống và sang trái/phải để ngắm bắn
-        val pullY = (curY - touchDownY).coerceAtLeast(0f) / screenH
+        // KÉO NGẮM TRỰC QUAN: Kéo bóng lùi xuống và hướng sang trái -> Sút sang TRÁI
+        // Kéo bóng lùi xuống và hướng sang phải -> Sút sang PHẢI
+        val pullY = dy.coerceAtLeast(0f) / screenH
         val pullX = dx / (screenW * 0.45f)
 
         val power = (pullY * 3.0f).coerceIn(0.2f, 1.2f)
         aimVz = 13.0f + power * 12.0f
         aimVy = 4.2f + power * 4.2f
         aimVx = (pullX * 6.0f).coerceIn(-6.0f, 6.0f)
-        aimCurve = (pullX * 1.0f).coerceIn(-2.0f, 2.0f)
+        aimCurve = 0f
         invalidate()
     }
 
