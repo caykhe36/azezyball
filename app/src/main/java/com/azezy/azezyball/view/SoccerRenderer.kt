@@ -257,15 +257,18 @@ class SoccerRenderer(
             renderGoalkeeper()
         }
 
-        // 5. Render Cartoon Soccer Ball
+        // 5. Render 3D Dynamic Ball Shadow on Grass
+        renderBallShadow()
+
+        // 6. Render 3D Cartoon Soccer Ball
         renderBall()
 
-        // 6. Render Trajectory line
+        // 7. Render Trajectory line
         if (isAiming && (ballPhysics.state == BallState.IDLE || ballPhysics.state == BallState.AIMING)) {
             renderTrajectory()
         }
 
-        // 7. Render Colorful Celebration Confetti
+        // 8. Render Colorful Celebration Confetti
         renderParticles()
     }
 
@@ -408,6 +411,33 @@ class SoccerRenderer(
         GLES20.glUniform1f(uSpecularPowerHandle, 32.0f)
         GLES20.glUniform1f(uMetallicHandle, 0.5f)
         goalkeeperMesh.mesh.render(aPositionHandle, aNormalHandle, aTexCoordinateHandle, false)
+    }
+
+    private fun renderBallShadow() {
+        GLES20.glUseProgram(toonProgram)
+        setupCommonUniforms()
+
+        val heightFactor = (1.0f - (ballPhysics.y / 3.5f)).coerceIn(0.25f, 1.0f)
+        val shadowScale = heightFactor * 1.15f
+
+        Matrix.setIdentityM(modelMatrix, 0)
+        Matrix.translateM(modelMatrix, 0, ballPhysics.x, 0.015f, ballPhysics.z)
+        Matrix.scaleM(modelMatrix, 0, shadowScale, 1.0f, shadowScale)
+        applyMatrices()
+
+        GLES20.glEnable(GLES20.GL_BLEND)
+        GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA)
+        GLES20.glDepthMask(false)
+
+        val alpha = 0.55f * heightFactor
+        GLES20.glUniform4f(uColorHandle, 0.05f, 0.15f, 0.08f, alpha)
+        GLES20.glUniform1i(uUseTextureHandle, 0)
+        GLES20.glUniform1f(uSpecularPowerHandle, 1.0f)
+        GLES20.glUniform1f(uMetallicHandle, 0.0f)
+        pitchMesh.shadowMesh.render(aPositionHandle, aNormalHandle, -1, false)
+
+        GLES20.glDepthMask(true)
+        GLES20.glDisable(GLES20.GL_BLEND)
     }
 
     private fun renderBall() {

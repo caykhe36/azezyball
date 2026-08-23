@@ -109,8 +109,8 @@ class BallPhysics {
 
         flightTime += dt
 
-        // Magnus effect curve force
-        val magnusForce = spinY * vz * 0.35f
+        // Gentle realistic Magnus curve force
+        val magnusForce = spinY * vz * 0.08f
         vx += magnusForce * dt
 
         // Gravity

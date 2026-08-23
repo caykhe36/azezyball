@@ -21,12 +21,12 @@ import com.azezy.azezyball.game.GameManager
 import com.azezy.azezyball.game.ScoreEvent
 import com.azezy.azezyball.sound.SoundEngine
 import com.azezy.azezyball.view.ControlMode
-import com.azezy.azezyball.view.SoccerCanvasView
+import com.azezy.azezyball.view.SoccerGLSurfaceView
 import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var soccerCanvasView: SoccerCanvasView
+    private lateinit var glSurfaceView: SoccerGLSurfaceView
     private lateinit var gameManager: GameManager
     private lateinit var soundEngine: SoundEngine
 
@@ -63,8 +63,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun initViews() {
-        soccerCanvasView = findViewById(R.id.soccerCanvasView)
-        soccerCanvasView.init(gameManager, soundEngine)
+        glSurfaceView = findViewById(R.id.glSurfaceView)
+        glSurfaceView.init(gameManager, soundEngine)
 
         topBar = findViewById(R.id.topBar)
         tvScore = findViewById(R.id.tvScore)
@@ -143,7 +143,7 @@ class MainActivity : AppCompatActivity() {
         }, 5000)
 
         // Or immediately hide on first touch
-        soccerCanvasView.onFirstTouch = {
+        glSurfaceView.onFirstTouch = {
             runOnUiThread {
                 dismissHint()
             }
@@ -170,8 +170,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showSettingsMenu() {
-        val keeperState = if (soccerCanvasView.goalkeeperEnabled) "TẮT" else "BẬT"
-        val modeState = if (soccerCanvasView.controlMode == ControlMode.SWIPE_FLICK) "Chuyển sang Kéo ngắm (Slingshot)" else "Chuyển sang Vuốt tự do (Swipe & Curve)"
+        val keeperState = if (glSurfaceView.renderer.ballPhysics.goalkeeperEnabled) "TẮT" else "BẬT"
+        val modeState = if (glSurfaceView.renderer.controlMode == ControlMode.SWIPE_FLICK) "Chuyển sang Kéo ngắm (Slingshot)" else "Chuyển sang Vuốt tự do (Swipe & Curve)"
 
         val options = arrayOf(
             "🧤 Thủ môn chắn bóng: $keeperState",
@@ -186,17 +186,17 @@ class MainActivity : AppCompatActivity() {
             .setItems(options) { _, which ->
                 when (which) {
                     0 -> {
-                        soccerCanvasView.goalkeeperEnabled = !soccerCanvasView.goalkeeperEnabled
-                        val msg = if (soccerCanvasView.goalkeeperEnabled) "Thủ môn: ĐÃ BẬT 🧤" else "Thủ môn: ĐÃ TẮT"
+                        glSurfaceView.renderer.ballPhysics.goalkeeperEnabled = !glSurfaceView.renderer.ballPhysics.goalkeeperEnabled
+                        val msg = if (glSurfaceView.renderer.ballPhysics.goalkeeperEnabled) "Thủ môn: ĐÃ BẬT 🧤" else "Thủ môn: ĐÃ TẮT"
                         Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
                     }
                     1 -> {
-                        if (soccerCanvasView.controlMode == ControlMode.SWIPE_FLICK) {
-                            soccerCanvasView.controlMode = ControlMode.SLINGSHOT_AIM
+                        if (glSurfaceView.renderer.controlMode == ControlMode.SWIPE_FLICK) {
+                            glSurfaceView.renderer.controlMode = ControlMode.SLINGSHOT_AIM
                             tvControlHint.text = "Kéo bóng lùi lại để ngắm quỹ đạo và thả tay để sút!"
                             Toast.makeText(this, "Chế độ: Ngắm bắn kéo thả (Slingshot)", Toast.LENGTH_SHORT).show()
                         } else {
-                            soccerCanvasView.controlMode = ControlMode.SWIPE_FLICK
+                            glSurfaceView.renderer.controlMode = ControlMode.SWIPE_FLICK
                             tvControlHint.text = getString(R.string.swipe_to_kick)
                             Toast.makeText(this, "Chế độ: Vuốt tự do (Swipe & Curve)", Toast.LENGTH_SHORT).show()
                         }
@@ -209,7 +209,7 @@ class MainActivity : AppCompatActivity() {
                     }
                     4 -> {
                         gameManager.resetGame()
-                        soccerCanvasView.resetBall()
+                        glSurfaceView.renderer.ballPhysics.reset()
                         Toast.makeText(this, "Đã làm mới trận đấu!", Toast.LENGTH_SHORT).show()
                     }
                 }
@@ -325,6 +325,12 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         hideSystemUI()
+        glSurfaceView.onResume()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        glSurfaceView.onPause()
     }
 
     override fun onDestroy() {

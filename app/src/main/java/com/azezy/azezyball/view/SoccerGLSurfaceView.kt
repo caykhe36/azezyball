@@ -96,38 +96,31 @@ class SoccerGLSurfaceView @JvmOverloads constructor(
 
     private fun handleSwipeKick(endX: Float, endY: Float) {
         val dx = endX - touchDownX
-        val dy = endY - touchDownY // Upward swipe is negative dy
-        val dt = (System.currentTimeMillis() - touchDownTime).coerceAtLeast(40).toFloat() / 1000f
+        val dy = endY - touchDownY
+        val dt = (System.currentTimeMillis() - touchDownTime).coerceIn(40L, 450L).toFloat() / 1000f
 
-        // Only kick if swiping upwards towards goal
-        if (dy < -40f) {
+        if (dy < -25f) {
             val screenH = height.toFloat()
             val screenW = width.toFloat()
 
-            // Normalized swipe speeds
-            val vyNorm = (-dy / screenH) / dt // Speed factor
-            val vxNorm = (dx / screenW) / dt
+            val forwardSpeedNorm = (-dy / screenH) / dt
+            val vz = (13.5f + forwardSpeedNorm * 2.8f).coerceIn(13.5f, 25.0f)
+            val vy = (4.2f + forwardSpeedNorm * 1.5f).coerceIn(4.0f, 8.5f)
 
-            // Forward speed: 14 to 28 m/s
-            val vz = (14f + vyNorm * 3.5f).coerceIn(14f, 27f)
+            // Direct 1-to-1 horizontal velocity
+            val horizontalRatio = dx / (screenW * 0.45f)
+            val vx = (horizontalRatio * 6.0f).coerceIn(-6.0f, 6.0f)
 
-            // Vertical launch angle speed: 4.5 to 9.5 m/s
-            val vy = (4.8f + vyNorm * 1.8f).coerceIn(4.5f, 9.2f)
-
-            // Horizontal directional velocity
-            val vx = (vxNorm * 6.5f + (dx / screenW) * 8.0f).coerceIn(-7.0f, 7.0f)
-
-            // Calculate Curve (Magnus effect) from swipe curve inflection
+            // Gentle natural curve (Magnus effect)
             var curve = 0f
-            if (touchPoints.size >= 4) {
+            if (touchPoints.size >= 5) {
                 val midIdx = touchPoints.size / 2
                 val midPoint = touchPoints[midIdx]
-                // Chord linear interpolation at midPoint Y
                 val t = if (abs(dy) > 1f) (midPoint.y - touchDownY) / dy else 0.5f
                 val expectedX = touchDownX + t * dx
                 val deviation = midPoint.x - expectedX
-                curve = (deviation / screenW) * 35.0f
-                curve = curve.coerceIn(-6.5f, 6.5f)
+                curve = (deviation / screenW) * 4.0f
+                curve = curve.coerceIn(-2.5f, 2.5f)
             }
 
             renderer.executeKick(vx, vy, vz, curve)
@@ -137,20 +130,17 @@ class SoccerGLSurfaceView @JvmOverloads constructor(
 
     private fun updateAiming(currentX: Float, currentY: Float) {
         val dx = currentX - touchDownX
-        val dy = currentY - touchDownY
-
         val screenH = height.toFloat()
         val screenW = width.toFloat()
 
-        // Slingshot: drag down to shoot forward
-        val pullY = dy.coerceAtLeast(0f) / screenH
-        val pullX = -dx / screenW
+        val pullY = (currentY - touchDownY).coerceAtLeast(0f) / screenH
+        val pullX = dx / (screenW * 0.45f)
 
         val power = (pullY * 3.0f).coerceIn(0.2f, 1.2f)
-        val vz = 13f + power * 13f
-        val vy = 4.2f + power * 4.5f
-        val vx = pullX * 12.0f
-        val curve = (pullX * 4.0f).coerceIn(-4.0f, 4.0f)
+        val vz = 13.0f + power * 12.0f
+        val vy = 4.2f + power * 4.2f
+        val vx = (pullX * 6.0f).coerceIn(-6.0f, 6.0f)
+        val curve = (pullX * 1.0f).coerceIn(-2.0f, 2.0f)
 
         renderer.aimVx = vx
         renderer.aimVy = vy
@@ -161,7 +151,7 @@ class SoccerGLSurfaceView @JvmOverloads constructor(
     private fun handleSlingshotRelease(endX: Float, endY: Float) {
         renderer.isAiming = false
         val dy = endY - touchDownY
-        if (dy > 30f) {
+        if (dy > 25f) {
             updateAiming(endX, endY)
             renderer.executeKick(renderer.aimVx, renderer.aimVy, renderer.aimVz, renderer.aimCurve)
         } else {

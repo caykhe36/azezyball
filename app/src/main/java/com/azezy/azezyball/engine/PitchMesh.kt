@@ -12,12 +12,48 @@ class PitchMesh(
     val linesMesh: Mesh
     val boardsMesh: Mesh
     val skyMesh: Mesh
+    val shadowMesh: Mesh
 
     init {
         grassMesh = buildGrass()
         linesMesh = buildLines()
         boardsMesh = buildBoards()
         skyMesh = buildSkyDome()
+        shadowMesh = buildShadowDisc()
+    }
+
+    private fun buildShadowDisc(): Mesh {
+        val segments = 24
+        val radius = 0.26f
+        val vertices = ArrayList<Float>()
+        val normals = ArrayList<Float>()
+        val indices = ArrayList<Short>()
+
+        vertices.add(0f); vertices.add(0f); vertices.add(0f)
+        normals.add(0f); normals.add(1f); normals.add(0f)
+
+        for (i in 0..segments) {
+            val angle = (i * 2.0 * Math.PI / segments).toFloat()
+            vertices.add(cos(angle) * radius)
+            vertices.add(0f)
+            vertices.add(sin(angle) * radius)
+            normals.add(0f); normals.add(1f); normals.add(0f)
+        }
+
+        for (i in 1..segments) {
+            indices.add(0)
+            indices.add(i.toShort())
+            indices.add((i + 1).toShort())
+        }
+
+        return Mesh(
+            Mesh.createFloatBuffer(vertices.toFloatArray()),
+            Mesh.createFloatBuffer(normals.toFloatArray()),
+            null,
+            Mesh.createShortBuffer(indices.toShortArray()),
+            vertices.size / 3,
+            indices.size
+        )
     }
 
     private fun buildSkyDome(): Mesh {
