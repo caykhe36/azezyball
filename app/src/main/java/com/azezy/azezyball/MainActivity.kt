@@ -164,9 +164,22 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateDashboard(score: Int, best: Int, streak: Int) {
-        tvScore.text = String.format(Locale.US, "%,d", score)
-        tvStreak.text = "🔥 x$streak"
+        tvScore.text = String.format(Locale.US, "⚽ %,d", score)
+        tvStreak.text = "x$streak"
         tvDistance.text = String.format(Locale.US, "🎯 %.1fm", gameManager.currentDistance)
+
+        // Bouncy punch animation when streak increases
+        val llStreakCard = findViewById<LinearLayout>(R.id.llStreakCard)
+        if (streak > 0) {
+            val scaleX = ObjectAnimator.ofFloat(llStreakCard, "scaleX", 1.0f, 1.22f, 1.0f)
+            val scaleY = ObjectAnimator.ofFloat(llStreakCard, "scaleY", 1.0f, 1.22f, 1.0f)
+            AnimatorSet().apply {
+                playTogether(scaleX, scaleY)
+                duration = 300
+                interpolator = OvershootInterpolator(2.5f)
+                start()
+            }
+        }
     }
 
     private fun showSettingsMenu() {
@@ -176,7 +189,8 @@ class MainActivity : AppCompatActivity() {
         val options = arrayOf(
             "🧤 Thủ môn chắn bóng: $keeperState",
             "🎮 Chế độ sút: $modeState",
-            "👑 Kỷ lục cao nhất: ${String.format(Locale.US, "%,d điểm", gameManager.bestScore)}",
+            "👑 Kỷ lục chuỗi cao nhất: x${gameManager.bestStreak} bàn liên tiếp!",
+            "🌟 Kỷ lục điểm số: ${String.format(Locale.US, "%,d điểm", gameManager.bestScore)}",
             "📖 Hướng dẫn cách chơi",
             "🔄 Làm mới trận đấu (Reset)"
         )
@@ -205,9 +219,12 @@ class MainActivity : AppCompatActivity() {
                         Toast.makeText(this, "Kỷ lục chuỗi: x${gameManager.bestStreak} bàn liên tiếp!", Toast.LENGTH_SHORT).show()
                     }
                     3 -> {
-                        showHelpDialog()
+                        Toast.makeText(this, "Kỷ lục điểm số: ${String.format(Locale.US, "%,d điểm", gameManager.bestScore)}", Toast.LENGTH_SHORT).show()
                     }
                     4 -> {
+                        showHelpDialog()
+                    }
+                    5 -> {
                         gameManager.resetGame()
                         soccerCanvasView.resetBall()
                         Toast.makeText(this, "Đã làm mới trận đấu!", Toast.LENGTH_SHORT).show()
@@ -223,21 +240,28 @@ class MainActivity : AppCompatActivity() {
         celebrationBanner.visibility = View.VISIBLE
         tvBannerTitle.text = event.title
         tvBannerTitle.setTextColor(Color.rgb(253, 224, 71)) // Bright Shiny Gold
-        tvBannerSub.text = String.format(Locale.US, "+%d ĐIỂM (Cự ly %.1fm)", event.pointsAdded, event.distanceMeters)
+
+        val comboText = when {
+            event.streak >= 10 -> "COMBO SIÊU CẤP x5"
+            event.streak >= 5 -> "COMBO SIÊU SAO x3"
+            event.streak >= 2 -> "COMBO x2"
+            else -> "BÀN THẮNG ĐẦU TIÊN"
+        }
+        tvBannerSub.text = String.format(Locale.US, "+%d ĐIỂM (%s - %.1fm)", event.pointsAdded, comboText, event.distanceMeters)
         tvBannerSub.setTextColor(Color.WHITE)
 
-        celebrationBanner.scaleX = 0.3f
-        celebrationBanner.scaleY = 0.3f
+        celebrationBanner.scaleX = 0.2f
+        celebrationBanner.scaleY = 0.2f
         celebrationBanner.alpha = 0f
 
-        val scaleX = ObjectAnimator.ofFloat(celebrationBanner, "scaleX", 0.3f, 1.05f, 1.0f)
-        val scaleY = ObjectAnimator.ofFloat(celebrationBanner, "scaleY", 0.3f, 1.05f, 1.0f)
+        val scaleX = ObjectAnimator.ofFloat(celebrationBanner, "scaleX", 0.2f, 1.12f, 1.0f)
+        val scaleY = ObjectAnimator.ofFloat(celebrationBanner, "scaleY", 0.2f, 1.12f, 1.0f)
         val alpha = ObjectAnimator.ofFloat(celebrationBanner, "alpha", 0f, 1.0f)
 
         AnimatorSet().apply {
             playTogether(scaleX, scaleY, alpha)
-            duration = 380
-            interpolator = OvershootInterpolator(2.0f)
+            duration = 400
+            interpolator = OvershootInterpolator(2.2f)
             start()
         }
 
@@ -249,7 +273,7 @@ class MainActivity : AppCompatActivity() {
             celebrationBanner.postDelayed({
                 celebrationBanner.visibility = View.GONE
             }, 280)
-        }, 1800)
+        }, 1900)
     }
 
     private fun showMissBanner() {
@@ -257,7 +281,7 @@ class MainActivity : AppCompatActivity() {
         celebrationBanner.visibility = View.VISIBLE
         tvBannerTitle.text = "❌ KHÔNG VÀO!"
         tvBannerTitle.setTextColor(Color.WHITE)
-        tvBannerSub.text = "Bóng ra ngoài! Chuỗi bàn thắng bị ngắt."
+        tvBannerSub.text = "Bóng ra ngoài! Đứt chuỗi ghi bàn liên tiếp."
         tvBannerSub.setTextColor(Color.rgb(254, 226, 226))
 
         celebrationBanner.scaleX = 0.8f

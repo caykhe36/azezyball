@@ -86,10 +86,12 @@ class GameManager(context: Context) {
         }
 
         val title = when {
-            isTopCorner -> "SIÊU PHẨM GÓC CHỮ A! 🎯"
-            currentStreak >= 5 -> "COMBO GHI BÀN x$currentStreak! 🔥"
-            currentDistance >= 15f -> "BÀN THẮNG TẦM XA! ⚡"
-            else -> "VÀO! BÀN THẮNG ĐẸP MẮT! ⚽"
+            isTopCorner && currentStreak >= 2 -> "🎯 GÓC CHỮ A + CHUỖI $currentStreak BÀN! 🔥"
+            isTopCorner -> "🎯 SIÊU PHẨM GÓC CHỮ A!"
+            currentStreak >= 10 -> "👑 HUYỀN THOẠI $currentStreak BÀN LIÊN TIẾP!"
+            currentStreak >= 5 -> "💥 SIÊU PHẨM $currentStreak BÀN LIÊN TIẾP!"
+            currentStreak >= 2 -> "🔥 $currentStreak BÀN LIÊN TIẾP!"
+            else -> "⚽ VÀO! GOAL!"
         }
 
         val event = ScoreEvent(
