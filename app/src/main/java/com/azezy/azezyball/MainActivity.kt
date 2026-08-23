@@ -219,10 +219,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showGoalCelebration(event: ScoreEvent) {
+        celebrationBanner.setBackgroundResource(R.drawable.bg_banner_goal)
         celebrationBanner.visibility = View.VISIBLE
         tvBannerTitle.text = event.title
-        tvBannerTitle.setTextColor(Color.WHITE)
+        tvBannerTitle.setTextColor(Color.rgb(253, 224, 71)) // Bright Shiny Gold
         tvBannerSub.text = String.format(Locale.US, "+%d ĐIỂM (Cự ly %.1fm)", event.pointsAdded, event.distanceMeters)
+        tvBannerSub.setTextColor(Color.WHITE)
 
         celebrationBanner.scaleX = 0.3f
         celebrationBanner.scaleY = 0.3f
@@ -234,27 +236,29 @@ class MainActivity : AppCompatActivity() {
 
         AnimatorSet().apply {
             playTogether(scaleX, scaleY, alpha)
-            duration = 400
+            duration = 380
             interpolator = OvershootInterpolator(2.0f)
             start()
         }
 
         celebrationBanner.postDelayed({
             val fadeOut = ObjectAnimator.ofFloat(celebrationBanner, "alpha", 1.0f, 0f).apply {
-                duration = 300
+                duration = 280
             }
             fadeOut.start()
             celebrationBanner.postDelayed({
                 celebrationBanner.visibility = View.GONE
-            }, 300)
+            }, 280)
         }, 1800)
     }
 
     private fun showMissBanner() {
+        celebrationBanner.setBackgroundResource(R.drawable.bg_banner_miss)
         celebrationBanner.visibility = View.VISIBLE
-        tvBannerTitle.text = getString(R.string.miss)
-        tvBannerTitle.setTextColor(ContextCompat.getColor(this, R.color.red_miss))
-        tvBannerSub.text = "Bóng ra ngoài khung thành! Chuỗi ghi bàn bị ngắt."
+        tvBannerTitle.text = "❌ KHÔNG VÀO!"
+        tvBannerTitle.setTextColor(Color.WHITE)
+        tvBannerSub.text = "Bóng ra ngoài! Chuỗi bàn thắng bị ngắt."
+        tvBannerSub.setTextColor(Color.rgb(254, 226, 226))
 
         celebrationBanner.scaleX = 0.8f
         celebrationBanner.scaleY = 0.8f
@@ -266,18 +270,18 @@ class MainActivity : AppCompatActivity() {
 
         AnimatorSet().apply {
             playTogether(scaleX, scaleY, alpha)
-            duration = 300
+            duration = 280
             start()
         }
 
         celebrationBanner.postDelayed({
             val fadeOut = ObjectAnimator.ofFloat(celebrationBanner, "alpha", 1.0f, 0f).apply {
-                duration = 250
+                duration = 240
             }
             fadeOut.start()
             celebrationBanner.postDelayed({
                 celebrationBanner.visibility = View.GONE
-            }, 250)
+            }, 240)
         }, 1200)
     }
 

@@ -131,23 +131,23 @@
         </LinearLayout>
     </LinearLayout>
 
-    <!-- Celebration Banner Overlay (Comic Popup) -->
+    <!-- Celebration Banner Overlay (Ultra High-Contrast Comic Popup) -->
     <LinearLayout
         android:id="@+id/celebrationBanner"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:background="@drawable/bg_celebration_banner"
-        android:elevation="18dp"
+        android:background="@drawable/bg_banner_goal"
+        android:elevation="20dp"
         android:gravity="center"
         android:orientation="vertical"
-        android:paddingHorizontal="36dp"
-        android:paddingVertical="18dp"
+        android:paddingHorizontal="32dp"
+        android:paddingVertical="16dp"
         android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.32">
+        app:layout_constraintVertical_bias="0.30">
 
         <TextView
             android:id="@+id/tvBannerTitle"
@@ -155,13 +155,13 @@
             android:layout_height="wrap_content"
             android:fontFamily="sans-serif-black"
             android:gravity="center"
-            android:shadowColor="#66000000"
-            android:shadowDx="2"
-            android:shadowDy="2"
-            android:shadowRadius="6"
+            android:shadowColor="#FF000000"
+            android:shadowDx="0"
+            android:shadowDy="3"
+            android:shadowRadius="8"
             android:text="💥 VÀO! GOAL!"
-            android:textColor="@color/white"
-            android:textSize="28sp" />
+            android:textColor="#FDE047"
+            android:textSize="26sp" />
 
         <TextView
             android:id="@+id/tvBannerSub"
@@ -170,9 +170,13 @@
             android:layout_marginTop="4dp"
             android:fontFamily="sans-serif-bold"
             android:gravity="center"
-            android:text="+150 ĐIỂM (COMBO x2)"
-            android:textColor="@color/gold_light"
-            android:textSize="16sp" />
+            android:shadowColor="#FF000000"
+            android:shadowDx="0"
+            android:shadowDy="2"
+            android:shadowRadius="4"
+            android:text="+150 ĐIỂM (Cự ly 10.5m)"
+            android:textColor="@color/white"
+            android:textSize="15sp" />
     </LinearLayout>
 
     <!-- Bottom Hint Card (Auto-hides after 5s or on touch) -->
