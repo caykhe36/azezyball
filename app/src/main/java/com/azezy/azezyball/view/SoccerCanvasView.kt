@@ -400,22 +400,29 @@ class SoccerCanvasView @JvmOverloads constructor(
         canvas.drawLine(gLeftX, gBottomY, gBackLeftX, gBackBottomY, goldDarkPaint)
         canvas.drawLine(gRightX, gBottomY, gBackRightX, gBackBottomY, goldDarkPaint)
 
-        // 3D Cylindrical Golden Posts & Crossbar
-        val postThickness = 14f * projectScale(goalZ)
+        // 3D Cylindrical Golden Posts & Crossbar with Metallic Highlights
+        val postThickness = 15f * projectScale(goalZ)
+
         // Left Post
         rectF.set(gLeftX - postThickness / 2f, gTopY - postThickness / 2f, gLeftX + postThickness / 2f, gBottomY)
         canvas.drawRoundRect(rectF, 6f, 6f, goldPostPaint)
         canvas.drawLine(gLeftX - postThickness / 4f, gTopY, gLeftX - postThickness / 4f, gBottomY, goldHighlightPaint)
+        canvas.drawLine(gLeftX + postThickness / 3f, gTopY, gLeftX + postThickness / 3f, gBottomY, goldDarkPaint)
 
         // Right Post
         rectF.set(gRightX - postThickness / 2f, gTopY - postThickness / 2f, gRightX + postThickness / 2f, gBottomY)
         canvas.drawRoundRect(rectF, 6f, 6f, goldPostPaint)
         canvas.drawLine(gRightX - postThickness / 4f, gTopY, gRightX - postThickness / 4f, gBottomY, goldHighlightPaint)
+        canvas.drawLine(gRightX + postThickness / 3f, gTopY, gRightX + postThickness / 3f, gBottomY, goldDarkPaint)
 
         // Top Crossbar
         rectF.set(gLeftX - postThickness / 2f, gTopY - postThickness / 2f, gRightX + postThickness / 2f, gTopY + postThickness / 2f)
         canvas.drawRoundRect(rectF, 6f, 6f, goldPostPaint)
         canvas.drawLine(gLeftX, gTopY - postThickness / 4f, gRightX, gTopY - postThickness / 4f, goldHighlightPaint)
+
+        // 3D Elbow Joints at Corners
+        canvas.drawCircle(gLeftX, gTopY, postThickness * 0.65f, goldDarkPaint)
+        canvas.drawCircle(gRightX, gTopY, postThickness * 0.65f, goldDarkPaint)
 
         // 7. Draw Mascot Goalkeeper (If active)
         if (goalkeeperEnabled) {
@@ -468,67 +475,76 @@ class SoccerCanvasView @JvmOverloads constructor(
         val bScreenX = projectX(ballX, ballZ)
         val bScreenY = projectY(ballY, ballZ)
         val bGroundY = projectY(0f, ballZ)
-        val bRadius = (w * 0.09f) * bScale
+        val bRadius = (w * 0.095f) * bScale
 
-        // Dynamic 3D Ground Shadow (Shrinks and softens with height)
-        val shadowHeightFactor = (1f - (ballY / 3.8f)).coerceIn(0.25f, 1.0f)
-        val shadowRadiusX = bRadius * 1.15f * shadowHeightFactor
-        val shadowRadiusY = bRadius * 0.38f * shadowHeightFactor
-        rectF.set(bScreenX - shadowRadiusX, bGroundY - shadowRadiusY, bScreenX + shadowRadiusX, bGroundY + shadowRadiusY)
-        shadowPaint.alpha = (85 * shadowHeightFactor).toInt()
-        canvas.drawOval(rectF, shadowPaint)
+        if (bRadius > 1.0f) {
+            // Dynamic 3D Ground Shadow (Shrinks and softens with height)
+            val shadowHeightFactor = (1f - (ballY / 3.8f)).coerceIn(0.25f, 1.0f)
+            val shadowRadiusX = bRadius * 1.18f * shadowHeightFactor
+            val shadowRadiusY = bRadius * 0.38f * shadowHeightFactor
+            rectF.set(bScreenX - shadowRadiusX, bGroundY - shadowRadiusY, bScreenX + shadowRadiusX, bGroundY + shadowRadiusY)
+            shadowPaint.alpha = (75 * shadowHeightFactor).toInt()
+            canvas.drawOval(rectF, shadowPaint)
 
-        // 3D Sphere Radial Shading
-        ball3DShadePaint.shader = RadialGradient(
-            bScreenX - bRadius * 0.35f, bScreenY - bRadius * 0.35f, bRadius * 1.25f,
-            intArrayOf(
-                Color.rgb(255, 255, 255), // Top lit white
-                Color.rgb(226, 232, 240), // Mid white
-                Color.rgb(148, 163, 184)  // Ambient occlusion shadow base
-            ),
-            floatArrayOf(0f, 0.6f, 1.0f),
-            Shader.TileMode.CLAMP
-        )
-        canvas.drawCircle(bScreenX, bScreenY, bRadius, ball3DShadePaint)
+            // 3D Sphere Radial Shading
+            try {
+                ball3DShadePaint.shader = RadialGradient(
+                    bScreenX - bRadius * 0.32f, bScreenY - bRadius * 0.32f, (bRadius * 1.28f).coerceAtLeast(1.0f),
+                    intArrayOf(
+                        Color.rgb(255, 255, 255), // Sun highlight
+                        Color.rgb(241, 245, 249), // Mid white leather
+                        Color.rgb(203, 213, 225), // Ambient occlusion shadow
+                        Color.rgb(148, 163, 184)  // Rim shadow
+                    ),
+                    floatArrayOf(0f, 0.45f, 0.85f, 1.0f),
+                    Shader.TileMode.CLAMP
+                )
+            } catch (_: Exception) {
+            }
 
-        // Rotating 3D Pentagons with perspective foreshortening
-        canvas.save()
-        canvas.translate(bScreenX, bScreenY)
-        canvas.rotate(ballRotationAngle)
+            // Draw Base Sphere
+            canvas.drawCircle(bScreenX, bScreenY, bRadius, ball3DShadePaint)
 
-        val patchRadius = bRadius * 0.36f
-        for (i in 0 until 5) {
-            val angle = (i * (360.0 / 5) - 18.0) * (PI / 180.0)
-            val px = (bRadius * 0.50f) * cos(angle).toFloat()
-            val py = (bRadius * 0.50f) * sin(angle).toFloat()
+            // Rotating 3D Pentagons (Telstar Geometric Masterpiece)
+            canvas.save()
+            canvas.translate(bScreenX, bScreenY)
+            canvas.rotate(ballRotationAngle)
 
+            // Central Black Pentagon
+            val centerPatchR = bRadius * 0.38f
+            drawPentagon(canvas, 0f, 0f, centerPatchR, ballBlackPaint, ballGoldSeamPaint)
+
+            // 5 Surrounding Radial Pentagons with Golden Seams
+            val surroundR = bRadius * 0.32f
+            val surroundDist = bRadius * 0.62f
+            for (i in 0 until 5) {
+                val angleRad = (i * 72.0 - 18.0) * (PI / 180.0)
+                val px = (surroundDist * cos(angleRad)).toFloat()
+                val py = (surroundDist * sin(angleRad)).toFloat()
+                drawPentagon(canvas, px, py, surroundR, ballBlackPaint, ballGoldSeamPaint)
+
+                // Golden connecting seam line to center pentagon
+                val centerCornerAngle = (i * 72.0 - 18.0) * (PI / 180.0)
+                val cx = (centerPatchR * cos(centerCornerAngle)).toFloat()
+                val cy = (centerPatchR * sin(centerCornerAngle)).toFloat()
+                canvas.drawLine(cx, cy, px, py, ballGoldSeamPaint)
+            }
+
+            // Center Gold Star Emblem
             ballPatchPath.reset()
             for (p in 0 until 5) {
-                val pAngle = (p * (360.0 / 5) - 18.0) * (PI / 180.0)
-                val x = px + patchRadius * cos(pAngle).toFloat()
-                val y = py + patchRadius * sin(pAngle).toFloat()
+                val pAngle = (p * 72.0 - 18.0) * (PI / 180.0)
+                val x = (centerPatchR * 0.55f * cos(pAngle)).toFloat()
+                val y = (centerPatchR * 0.55f * sin(pAngle)).toFloat()
                 if (p == 0) ballPatchPath.moveTo(x, y) else ballPatchPath.lineTo(x, y)
             }
             ballPatchPath.close()
-            canvas.drawPath(ballPatchPath, ballBlackPaint)
-            canvas.drawPath(ballPatchPath, ballGoldSeamPaint)
-        }
+            canvas.drawPath(ballPatchPath, goldPostPaint)
 
-        // Center Gold Star Emblem
-        ballPatchPath.reset()
-        for (p in 0 until 5) {
-            val pAngle = (p * (360.0 / 5) - 18.0) * (PI / 180.0)
-            val x = (patchRadius * 0.9f) * cos(pAngle).toFloat()
-            val y = (patchRadius * 0.9f) * sin(pAngle).toFloat()
-            if (p == 0) ballPatchPath.moveTo(x, y) else ballPatchPath.lineTo(x, y)
+            // Dual Glossy Specular 3D Highlights
+            canvas.drawCircle(-bRadius * 0.35f, -bRadius * 0.35f, bRadius * 0.22f, ballGlossPaint)
+            canvas.restore()
         }
-        ballPatchPath.close()
-        canvas.drawPath(ballPatchPath, goldPostPaint)
-        canvas.drawPath(ballPatchPath, ballGoldSeamPaint)
-
-        // Glossy Specular 3D Dot
-        canvas.drawCircle(-bRadius * 0.35f, -bRadius * 0.35f, bRadius * 0.22f, ballGlossPaint)
-        canvas.restore()
 
         // 10. Draw Celebration Rainbow Confetti
         for (p in particles) {
@@ -548,6 +564,19 @@ class SoccerCanvasView @JvmOverloads constructor(
         canvas.drawCircle(cx + 24f * scale, cy + 3f * scale, 20f * scale, cloudPaint)
         canvas.drawCircle(cx - 12f * scale, cy - 12f * scale, 18f * scale, cloudPaint)
         canvas.drawCircle(cx + 12f * scale, cy - 12f * scale, 18f * scale, cloudPaint)
+    }
+
+    private fun drawPentagon(canvas: Canvas, cx: Float, cy: Float, radius: Float, fillPaint: Paint, strokePaint: Paint) {
+        val path = Path()
+        for (i in 0 until 5) {
+            val angle = (i * 72.0 - 18.0) * (PI / 180.0)
+            val x = cx + (radius * cos(angle)).toFloat()
+            val y = cy + (radius * sin(angle)).toFloat()
+            if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
+        }
+        path.close()
+        canvas.drawPath(path, fillPaint)
+        canvas.drawPath(path, strokePaint)
     }
 
     private fun updatePhysics(dt: Float) {
