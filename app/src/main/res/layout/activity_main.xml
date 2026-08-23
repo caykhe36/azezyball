@@ -8,9 +8,9 @@
     android:background="@color/cartoon_sky"
     tools:context=".MainActivity">
 
-    <!-- 3D OpenGL ES Cartoon Game Surface -->
-    <com.azezy.azezyball.view.SoccerGLSurfaceView
-        android:id="@+id/glSurfaceView"
+    <!-- 3D Cartoon Soccer Canvas Game Surface -->
+    <com.azezy.azezyball.view.SoccerCanvasView
+        android:id="@+id/soccerCanvasView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -18,12 +18,14 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <!-- Compact Floating Top Bar (Single Clean Row with Safe Notch Clearance) -->
-    <RelativeLayout
+    <!-- Compact Floating Top Bar (Single Clean Row with Safe Spacing) -->
+    <LinearLayout
         android:id="@+id/topBar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:paddingHorizontal="16dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="14dp"
         android:paddingTop="52dp"
         android:paddingBottom="8dp"
         app:layout_constraintTop_toTopOf="parent">
@@ -32,35 +34,33 @@
         <LinearLayout
             android:id="@+id/llScoreCard"
             android:layout_width="wrap_content"
-            android:layout_height="44dp"
-            android:layout_alignParentStart="true"
-            android:layout_centerVertical="true"
+            android:layout_height="42dp"
             android:background="@drawable/bg_hud_panel"
             android:elevation="6dp"
             android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:paddingHorizontal="14dp">
+            android:paddingHorizontal="12dp">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="⚽"
-                android:textSize="18sp" />
+                android:textSize="16sp" />
 
             <TextView
                 android:id="@+id/tvScore"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="6dp"
+                android:layout_marginStart="4dp"
                 android:fontFamily="sans-serif-black"
                 android:text="0"
                 android:textColor="@color/cartoon_orange"
-                android:textSize="20sp" />
+                android:textSize="18sp" />
 
             <View
                 android:layout_width="1.5dp"
-                android:layout_height="18dp"
-                android:layout_marginHorizontal="10dp"
+                android:layout_height="16dp"
+                android:layout_marginHorizontal="8dp"
                 android:background="#E2E8F0" />
 
             <TextView
@@ -70,15 +70,20 @@
                 android:fontFamily="sans-serif-black"
                 android:text="🔥 x0"
                 android:textColor="@color/cartoon_green"
-                android:textSize="16sp" />
+                android:textSize="14sp" />
         </LinearLayout>
+
+        <!-- Flexible Spacer to prevent overlapping on any screen size -->
+        <Space
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
 
         <!-- Center: Distance Chip -->
         <TextView
             android:id="@+id/tvDistance"
             android:layout_width="wrap_content"
             android:layout_height="32dp"
-            android:layout_centerInParent="true"
             android:background="@drawable/bg_hud_badge"
             android:elevation="4dp"
             android:fontFamily="sans-serif-bold"
@@ -88,39 +93,43 @@
             android:textColor="@color/white"
             android:textSize="12sp" />
 
-        <!-- Right: Action Buttons (Only 2 compact buttons) -->
+        <!-- Flexible Spacer -->
+        <Space
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
+
+        <!-- Right: Action Buttons -->
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignParentEnd="true"
-            android:layout_centerVertical="true"
             android:gravity="center_vertical"
             android:orientation="horizontal">
 
             <!-- Sound Button -->
             <ImageButton
                 android:id="@+id/btnSound"
-                android:layout_width="44dp"
-                android:layout_height="44dp"
+                android:layout_width="42dp"
+                android:layout_height="42dp"
                 android:background="@drawable/bg_icon_button"
                 android:contentDescription="Âm thanh"
                 android:elevation="6dp"
-                android:padding="10dp"
+                android:padding="9dp"
                 android:src="@drawable/ic_volume_up" />
 
-            <!-- Settings / Menu Button -->
+            <!-- Settings Button -->
             <ImageButton
                 android:id="@+id/btnSettings"
-                android:layout_width="44dp"
-                android:layout_height="44dp"
+                android:layout_width="42dp"
+                android:layout_height="42dp"
                 android:layout_marginStart="8dp"
                 android:background="@drawable/bg_icon_button"
                 android:contentDescription="Cài đặt &amp; Tùy chọn"
                 android:elevation="6dp"
-                android:padding="10dp"
+                android:padding="9dp"
                 android:src="@drawable/ic_settings" />
         </LinearLayout>
-    </RelativeLayout>
+    </LinearLayout>
 
     <!-- Celebration Banner Overlay (Comic Popup) -->
     <LinearLayout
