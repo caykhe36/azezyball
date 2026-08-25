@@ -92,7 +92,28 @@ class SoccerCanvasView @JvmOverloads constructor(
     private var aimVz = 0f
     private var aimCurve = 0f
 
-    // Celebration Confetti Particles
+    // Dynamic Visual FX & Animation States
+    private var screenShake = 0f
+    private var goldShimmer = 0f
+    private var targetPulse = 0f
+    private var trailTimer = 0f
+
+    // 3D Glowing Ball Trail (Vệt lửa sao băng)
+    private class TrailPoint(var x: Float = 0f, var y: Float = 0f, var z: Float = 0f, var alpha: Float = 0f, var radius: Float = 0f)
+    private val ballTrail = Array(20) { TrailPoint() }
+
+    // Crowd Camera Flash Sparkles
+    private class FlashBulb(var x: Float = 0f, var y: Float = 0f, var alpha: Float = 0f, var size: Float = 0f)
+    private val flashBulbs = Array(14) { FlashBulb() }
+
+    // Goal Shockwave Ring
+    private var shockwaveActive = false
+    private var shockwaveRadius = 0f
+    private var shockwaveX = 0f
+    private var shockwaveY = 0f
+    private var shockwaveAlpha = 255
+
+    // Celebration Confetti & Sparkles
     private class Particle {
         var active = false
         var x = 0f
@@ -104,8 +125,11 @@ class SoccerCanvasView @JvmOverloads constructor(
         var alpha = 255
         var life = 0f
         var maxLife = 1f
+        var rotation = 0f
+        var vRot = 0f
+        var isStar = false
     }
-    private val particles = Array(120) { Particle() }
+    private val particles = Array(140) { Particle() }
 
     // Pre-allocated Paints (Zero allocations in onDraw)
     private val skyPaint = Paint()
@@ -121,6 +145,7 @@ class SoccerCanvasView @JvmOverloads constructor(
     private val goldPostPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val goldDarkPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val goldHighlightPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val goldShimmerPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val netPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val netBackFillPaint = Paint()
     private val shadowPaint = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -135,6 +160,12 @@ class SoccerCanvasView @JvmOverloads constructor(
     private val trajectoryPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val particlePaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val ledBrandPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val trailPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val floodlightPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val lightBeamPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val shockwavePaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val reticlePaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val flashPaint = Paint(Paint.ANTI_ALIAS_FLAG)
 
     private val netPath = Path()
     private val ballPatchPath = Path()
@@ -251,6 +282,46 @@ class SoccerCanvasView @JvmOverloads constructor(
             style = Paint.Style.FILL
             setShadowLayer(6f, 0f, 0f, Color.rgb(245, 158, 11))
         }
+
+        goldShimmerPaint.apply {
+            color = Color.rgb(255, 255, 255)
+            style = Paint.Style.STROKE
+            strokeWidth = 4.5f
+            strokeCap = Paint.Cap.ROUND
+            setShadowLayer(8f, 0f, 0f, Color.rgb(253, 224, 71))
+        }
+
+        trailPaint.apply {
+            style = Paint.Style.STROKE
+            strokeCap = Paint.Cap.ROUND
+            strokeJoin = Paint.Join.ROUND
+        }
+
+        floodlightPaint.apply {
+            color = Color.rgb(254, 240, 138)
+            style = Paint.Style.FILL
+            setShadowLayer(14f, 0f, 0f, Color.WHITE)
+        }
+
+        lightBeamPaint.style = Paint.Style.FILL
+
+        shockwavePaint.apply {
+            style = Paint.Style.STROKE
+            strokeWidth = 6f
+            color = Color.rgb(251, 191, 36)
+        }
+
+        reticlePaint.apply {
+            style = Paint.Style.STROKE
+            strokeWidth = 3.5f
+            color = Color.rgb(245, 158, 11)
+            setShadowLayer(6f, 0f, 0f, Color.rgb(253, 224, 71))
+        }
+
+        flashPaint.apply {
+            color = Color.WHITE
+            style = Paint.Style.FILL
+        }
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
@@ -280,6 +351,15 @@ class SoccerCanvasView @JvmOverloads constructor(
 
         val w = width.toFloat()
         val h = height.toFloat()
+
+        // 0. Screen Shake Impact (Rung động màn hình khi sút / trúng xà / ghi bàn)
+        canvas.save()
+        if (screenShake > 0.001f) {
+            val ox = (Random.nextFloat() - 0.5f) * screenShake * 22f
+            val oy = (Random.nextFloat() - 0.5f) * screenShake * 22f
+            canvas.translate(ox, oy)
+            screenShake = (screenShake - dt * 3.5f).coerceAtLeast(0f)
+        }
 
         // 3D Cinematic Camera Tracking Interpolation
         if (ballState == BallState.FLYING || ballState == BallState.SCORED || ballState == BallState.MISSED) {
@@ -318,9 +398,25 @@ class SoccerCanvasView @JvmOverloads constructor(
         val c3Y = horizonY * 0.84f
         drawCloud(canvas, c3X, c3Y, 0.75f)
 
-        // 2. Draw 3D Stadium Stands & Grandstands
+        // 2. Draw 3D Stadium Stands & Crowd Camera Flash Flares
         canvas.drawRect(0f, horizonY - 26f, w, horizonY, stadiumPaint)
         canvas.drawRect(0f, horizonY - 14f, w, horizonY, crowdPaint)
+
+        // Crowd Camera Flash Sparkles in Grandstand
+        for (fb in flashBulbs) {
+            if (fb.alpha > 0.05f) {
+                flashPaint.color = Color.argb((fb.alpha * 255).toInt(), 255, 255, 255)
+                canvas.drawCircle(fb.x, fb.y, fb.size, flashPaint)
+                canvas.drawLine(fb.x - fb.size * 2f, fb.y, fb.x + fb.size * 2f, fb.y, flashPaint)
+                canvas.drawLine(fb.x, fb.y - fb.size * 2f, fb.x, fb.y + fb.size * 2f, flashPaint)
+                fb.alpha -= dt * 2.8f
+            } else if (Random.nextFloat() < 0.035f) {
+                fb.x = Random.nextFloat() * w
+                fb.y = horizonY - 24f + Random.nextFloat() * 18f
+                fb.alpha = 0.85f + Random.nextFloat() * 0.15f
+                fb.size = 2.5f + Random.nextFloat() * 3.5f
+            }
+        }
 
         // 3. Draw 3D Perspective Pitch (Emerald Grass Lawn Stripes)
         val numStripes = 9
@@ -348,6 +444,31 @@ class SoccerCanvasView @JvmOverloads constructor(
         fun projectScale(wz: Float): Float {
             return fov / (fov + wz + camFollowZ)
         }
+
+        // Volumetric Stadium Floodlight Beams (Hai chùm đèn pha sân vận động tỏa sáng)
+        val flLeftX = w * 0.05f
+        val flLeftY = horizonY * 0.40f
+        canvas.drawCircle(flLeftX, flLeftY, 14f, floodlightPaint)
+        val beamPathLeft = Path().apply {
+            moveTo(flLeftX, flLeftY)
+            lineTo(projectX(-4.5f, 2.0f), projectY(0f, 2.0f))
+            lineTo(projectX(-1.5f, 7.5f), projectY(0f, 7.5f))
+            close()
+        }
+        lightBeamPaint.shader = LinearGradient(flLeftX, flLeftY, projectX(-3.0f, 5.0f), projectY(0f, 5.0f), Color.argb(40, 254, 240, 138), Color.TRANSPARENT, Shader.TileMode.CLAMP)
+        canvas.drawPath(beamPathLeft, lightBeamPaint)
+
+        val flRightX = w * 0.95f
+        val flRightY = horizonY * 0.40f
+        canvas.drawCircle(flRightX, flRightY, 14f, floodlightPaint)
+        val beamPathRight = Path().apply {
+            moveTo(flRightX, flRightY)
+            lineTo(projectX(4.5f, 2.0f), projectY(0f, 2.0f))
+            lineTo(projectX(1.5f, 7.5f), projectY(0f, 7.5f))
+            close()
+        }
+        lightBeamPaint.shader = LinearGradient(flRightX, flRightY, projectX(3.0f, 5.0f), projectY(0f, 5.0f), Color.argb(40, 254, 240, 138), Color.TRANSPARENT, Shader.TileMode.CLAMP)
+        canvas.drawPath(beamPathRight, lightBeamPaint)
 
         // 4. 3D LED Stadium Advertising Boards with Official "AZEZY.COM" Branding
         val bLeftX = projectX(-6.5f, goalZ + 0.5f)
@@ -461,6 +582,11 @@ class SoccerCanvasView @JvmOverloads constructor(
         canvas.drawRoundRect(rectF, 6f, 6f, goldPostPaint)
         canvas.drawLine(gLeftX, gTopY - postThickness / 4f, gRightX, gTopY - postThickness / 4f, goldHighlightPaint)
 
+        // Golden Shimmer Light Wave on Crossbar (Ánh sáng kim loại chạy dọc xà ngang)
+        goldShimmer = (goldShimmer + dt * 1.3f) % 1.0f
+        val shimmerX = gLeftX + (gRightX - gLeftX) * goldShimmer
+        canvas.drawLine(shimmerX - 26f, gTopY, shimmerX + 26f, gTopY, goldShimmerPaint)
+
         // 3D Elbow Joints at Corners
         canvas.drawCircle(gLeftX, gTopY, postThickness * 0.65f, goldDarkPaint)
         canvas.drawCircle(gRightX, gTopY, postThickness * 0.65f, goldDarkPaint)
@@ -489,7 +615,7 @@ class SoccerCanvasView @JvmOverloads constructor(
             canvas.drawCircle(gkScreenX + gkW * 0.52f, gkScreenY - gkH * 0.55f, gkW * 0.20f, gkGlovePaint)
         }
 
-        // 8. Draw 3D Trajectory Aiming Line
+        // 8. Draw 3D Trajectory Aiming Line & Pulsing 3D Bullseye Reticle
         if (isAiming && (ballState == BallState.IDLE || ballState == BallState.AIMING)) {
             var simX = ballX
             var simY = ballY
@@ -499,19 +625,63 @@ class SoccerCanvasView @JvmOverloads constructor(
             var simVz = aimVz
             val path = Path()
             path.moveTo(projectX(simX, simZ), projectY(simY, simZ))
-            for (i in 0 until 20) {
+            var targetX = 0f
+            var targetY = 1.2f
+            for (i in 0 until 22) {
                 simVy -= 9.8f * 0.04f
                 simVx += aimCurve * 0.08f * 0.04f
                 simX += simVx * 0.04f
                 simY += simVy * 0.04f
                 simZ += simVz * 0.04f
-                if (simY < 0.1f || simZ > goalZ + 1.0f) break
+                if (simZ >= goalZ && simZ <= goalZ + 0.6f) {
+                    targetX = simX
+                    targetY = simY
+                }
+                if (simY < 0.1f || simZ > goalZ + 1.2f) break
                 path.lineTo(projectX(simX, simZ), projectY(simY, simZ))
             }
             canvas.drawPath(path, trajectoryPaint)
+
+            // 3D Concentric Glowing Bullseye Target Reticle at Impact Point
+            targetPulse = (targetPulse + dt * 6.0f) % (Math.PI * 2).toFloat()
+            val targetScreenX = projectX(targetX, goalZ)
+            val targetScreenY = projectY(targetY.coerceIn(0.25f, goalHeight), goalZ)
+            val pulseScale = 1.0f + 0.16f * sin(targetPulse)
+            val reticleR = 24f * projectScale(goalZ) * pulseScale
+
+            canvas.drawCircle(targetScreenX, targetScreenY, reticleR, reticlePaint)
+            canvas.drawCircle(targetScreenX, targetScreenY, reticleR * 0.5f, reticlePaint)
+            canvas.drawCircle(targetScreenX, targetScreenY, 4f, reticlePaint)
+            canvas.drawLine(targetScreenX - reticleR * 1.3f, targetScreenY, targetScreenX - reticleR * 0.7f, targetScreenY, reticlePaint)
+            canvas.drawLine(targetScreenX + reticleR * 0.7f, targetScreenY, targetScreenX + reticleR * 1.3f, targetScreenY, reticlePaint)
+            canvas.drawLine(targetScreenX, targetScreenY - reticleR * 1.3f, targetScreenX, targetScreenY - reticleR * 0.7f, reticlePaint)
+            canvas.drawLine(targetScreenX, targetScreenY + reticleR * 0.7f, targetScreenX, targetScreenY + reticleR * 1.3f, reticlePaint)
         }
 
-        // 9. Draw Volumetric 3D Soccer Ball & Dynamic Ground Shadow
+        // 9. Draw Fiery 3D Glowing Ball Ribbon Trail (Vệt lửa sao băng khi bóng bay)
+        for (i in 1 until ballTrail.size) {
+            val p1 = ballTrail[i - 1]
+            val p2 = ballTrail[i]
+            if (p1.alpha > 0.04f && p2.alpha > 0.04f) {
+                val s1x = projectX(p1.x, p1.z)
+                val s1y = projectY(p1.y, p1.z)
+                val s2x = projectX(p2.x, p2.z)
+                val s2y = projectY(p2.y, p2.z)
+                val tAlpha = ((p1.alpha) * 220).toInt().coerceIn(0, 255)
+
+                // Outer fiery orange glow
+                trailPaint.strokeWidth = (p1.radius * 1.15f).coerceAtLeast(3f)
+                trailPaint.color = Color.argb(tAlpha, 251, 146, 60)
+                canvas.drawLine(s1x, s1y, s2x, s2y, trailPaint)
+
+                // Inner blazing golden core
+                trailPaint.strokeWidth = (p1.radius * 0.55f).coerceAtLeast(1.5f)
+                trailPaint.color = Color.argb(tAlpha, 254, 240, 138)
+                canvas.drawLine(s1x, s1y, s2x, s2y, trailPaint)
+            }
+        }
+
+        // 10. Draw Volumetric 3D Soccer Ball & Dynamic Ground Shadow
         val bScale = projectScale(ballZ)
         val bScreenX = projectX(ballX, ballZ)
         val bScreenY = projectY(ballY, ballZ)
@@ -587,15 +757,43 @@ class SoccerCanvasView @JvmOverloads constructor(
             canvas.restore()
         }
 
-        // 10. Draw Celebration Rainbow Confetti
+        // 11. Goal Shockwave Blast Ring (Sóng kích nổ khi ghi bàn)
+        if (shockwaveActive) {
+            shockwaveRadius += 520f * dt
+            shockwaveAlpha = (255 * (1f - shockwaveRadius / 260f)).toInt().coerceIn(0, 255)
+            if (shockwaveRadius >= 260f || shockwaveAlpha <= 0) {
+                shockwaveActive = false
+            } else {
+                shockwavePaint.color = Color.argb(shockwaveAlpha, 251, 191, 36)
+                shockwavePaint.strokeWidth = 8f * (1f - shockwaveRadius / 260f)
+                canvas.drawCircle(shockwaveX, shockwaveY, shockwaveRadius, shockwavePaint)
+
+                shockwavePaint.color = Color.argb(shockwaveAlpha / 2, 254, 240, 138)
+                shockwavePaint.strokeWidth = 4f
+                canvas.drawCircle(shockwaveX, shockwaveY, shockwaveRadius * 0.70f, shockwavePaint)
+            }
+        }
+
+        // 12. Draw Celebration Confetti, Diamonds & Golden Stars
         for (p in particles) {
             if (p.active) {
                 particlePaint.color = p.color
                 particlePaint.alpha = p.alpha
-                canvas.drawCircle(p.x, p.y, p.size, particlePaint)
+                canvas.save()
+                canvas.translate(p.x, p.y)
+                canvas.rotate(p.rotation)
+                if (p.isStar) {
+                    // Star shape
+                    canvas.drawRect(-p.size * 0.6f, -p.size * 0.6f, p.size * 0.6f, p.size * 0.6f, particlePaint)
+                } else {
+                    // Confetti ribbon
+                    canvas.drawRoundRect(RectF(-p.size, -p.size * 0.4f, p.size, p.size * 0.4f), 3f, 3f, particlePaint)
+                }
+                canvas.restore()
             }
         }
 
+        canvas.restore() // Restore screen shake
         invalidate()
     }
 
@@ -772,27 +970,42 @@ class SoccerCanvasView @JvmOverloads constructor(
     private fun spawnConfetti() {
         val w = width.toFloat()
         val h = height.toFloat()
+        screenShake = 1.0f
+        shockwaveActive = true
+        shockwaveRadius = 0f
+        val fov = 7.2f
+        val scale = fov / (fov + goalZ + camFollowZ)
+        shockwaveX = (w * 0.5f - (camFollowX * 22f)) + ballX * (w * 0.29f) * scale
+        val horizonY = h * 0.43f + (camFollowY * 18f)
+        val pitchCenterBottomY = h * 0.84f + (camFollowY * 15f)
+        val groundY = horizonY + (pitchCenterBottomY - horizonY) * scale
+        shockwaveY = groundY - ballY * (w * 0.29f) * scale
+
         val colors = intArrayOf(
             Color.rgb(251, 191, 36),  // Gold
-            Color.rgb(244, 63, 94),   // Pink
+            Color.rgb(244, 63, 94),   // Crimson Pink
             Color.rgb(56, 189, 248),  // Cyan
             Color.rgb(74, 222, 128),  // Lime
             Color.rgb(251, 146, 60),  // Orange
-            Color.rgb(253, 224, 71)   // Yellow
+            Color.rgb(253, 224, 71),  // Sunlight Yellow
+            Color.rgb(255, 255, 255)  // Star White
         )
         for (p in particles) {
             p.active = true
-            p.x = w * (0.35f + Random.nextFloat() * 0.3f)
-            p.y = h * (0.30f + Random.nextFloat() * 0.2f)
-            val speed = 250f + Random.nextFloat() * 450f
+            p.x = shockwaveX + (Random.nextFloat() - 0.5f) * 60f
+            p.y = shockwaveY + (Random.nextFloat() - 0.5f) * 40f
+            val speed = 280f + Random.nextFloat() * 520f
             val angle = Random.nextFloat() * (Math.PI * 2).toFloat()
             p.vx = cos(angle) * speed
-            p.vy = sin(angle) * speed - 150f
+            p.vy = sin(angle) * speed - 180f
             p.color = colors[Random.nextInt(colors.size)]
-            p.size = 10f + Random.nextFloat() * 14f
-            p.maxLife = 1.8f + Random.nextFloat() * 0.8f
+            p.size = 8f + Random.nextFloat() * 15f
+            p.maxLife = 1.6f + Random.nextFloat() * 0.8f
             p.life = p.maxLife
             p.alpha = 255
+            p.rotation = Random.nextFloat() * 360f
+            p.vRot = (Random.nextFloat() - 0.5f) * 400f
+            p.isStar = Random.nextBoolean()
         }
     }
 
@@ -804,9 +1017,10 @@ class SoccerCanvasView @JvmOverloads constructor(
                     p.active = false
                     continue
                 }
-                p.vy += 450f * dt
+                p.vy += 420f * dt
                 p.x += p.vx * dt
                 p.y += p.vy * dt
+                p.rotation += p.vRot * dt
                 p.alpha = ((p.life / p.maxLife) * 255).toInt().coerceIn(0, 255)
             }
         }
