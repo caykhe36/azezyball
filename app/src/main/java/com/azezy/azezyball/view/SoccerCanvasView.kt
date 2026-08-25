@@ -128,6 +128,7 @@ class SoccerCanvasView @JvmOverloads constructor(
     private val gkHeadPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val trajectoryPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val particlePaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val ledBrandPaint = Paint(Paint.ANTI_ALIAS_FLAG)
 
     private val netPath = Path()
     private val ballPatchPath = Path()
@@ -232,6 +233,14 @@ class SoccerCanvasView @JvmOverloads constructor(
         }
 
         particlePaint.style = Paint.Style.FILL
+
+        ledBrandPaint.apply {
+            color = Color.rgb(254, 240, 138)
+            textAlign = Paint.Align.CENTER
+            isFakeBoldText = true
+            style = Paint.Style.FILL
+            setShadowLayer(6f, 0f, 0f, Color.rgb(245, 158, 11))
+        }
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
@@ -314,12 +323,18 @@ class SoccerCanvasView @JvmOverloads constructor(
             return fov / (fov + wz + camFollowZ)
         }
 
-        // 4. 3D LED Stadium Advertising Boards along Goal Line
+        // 4. 3D LED Stadium Advertising Boards with Official "AZEZY.COM" Branding
         val bLeftX = projectX(-6.5f, goalZ + 0.5f)
         val bRightX = projectX(6.5f, goalZ + 0.5f)
         val bBottomY = projectY(0f, goalZ + 0.5f)
         val bTopY = projectY(0.7f, goalZ + 0.5f)
         canvas.drawRect(bLeftX, bTopY, bRightX, bBottomY, boardPaint)
+
+        // Draw Glowing Brand Text on LED Board
+        val ledTextScale = projectScale(goalZ + 0.5f)
+        ledBrandPaint.textSize = (w * 0.038f) * ledTextScale
+        val brandY = bBottomY - (bBottomY - bTopY) * 0.32f
+        canvas.drawText("★ AZEZY.COM • OFFICIAL 3D GAME ★", pitchCenterBottomX, brandY, ledBrandPaint)
 
         // 5. Draw 3D Pitch Lines (Goal line, Penalty area, Penalty spot)
         val goalLineY = projectY(0f, goalZ)
