@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="vi" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azezy Ball 3D - Siêu Phẩm Game Bóng Đá Arcade 120 FPS</title>
+    <meta name="description" content="Trải nghiệm game sút phạt bóng đá 3D đỉnh cao trên Android. Đồ họa siêu mượt 120 FPS, quả bóng Telstar phát sáng, khung thành mạ vàng và chuỗi bàn thắng liên tiếp bùng nổ.">
+    <link rel="icon" type="image/png" href="logo.png">
+    
+    <!-- Open Graph / Meta -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://azezyball.azezy.com/">
+    <meta property="og:title" content="Azezy Ball 3D - Siêu Phẩm Game Bóng Đá Arcade 120 FPS">
+    <meta property="og:description" content="Game sút phạt 3D Arcade thế hệ mới trên Android do Azezy Studio phát triển.">
+    <meta property="og:image" content="https://azezyball.azezy.com/screenshot1.png">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        appBg: '#090D16',
+                        surfaceBg: '#111827',
+                        surfaceCard: '#1E293B',
+                        primaryGold: '#F59E0B',
+                        primaryGoldLight: '#FDE047',
+                        turfGreen: '#10B981',
+                        skyBlue: '#0284C7',
+                        textWhite: '#F8FAFC',
+                        textGray: '#94A3B8',
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'float': 'float 4s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-12px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #090D16; color: #F8FAFC; font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+        .hero-gradient { background: radial-gradient(circle at 50% 20%, rgba(245, 158, 11, 0.12), transparent 60%), linear-gradient(180deg, #090D16 0%, #0F172A 100%); }
+        .glass { background: rgba(17, 24, 39, 0.75); backdrop-filter: blur(14px); border: 1px solid rgba(255, 255, 255, 0.08); }
+        .glass-gold { background: rgba(245, 158, 11, 0.08); backdrop-filter: blur(12px); border: 1px solid rgba(245, 158, 11, 0.25); }
+        .glow-gold { box-shadow: 0 0 40px -10px rgba(245, 158, 11, 0.4); }
+        .glow-green { box-shadow: 0 0 40px -10px rgba(16, 185, 129, 0.35); }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #090D16; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #F59E0B; }
+    </style>
+</head>
+<body class="antialiased selection:bg-primaryGold selection:text-appBg">
+
+    <!-- Header Navigation -->
+    <header class="fixed w-full top-0 z-50 glass border-b border-white/10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-20">
+                <a href="#" class="flex items-center space-x-3 group">
+                    <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-primaryGold to-amber-600 flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
+                        <span class="text-2xl">⚽</span>
+                    </div>
+                    <div>
+                        <span class="text-2xl font-black text-white tracking-tight">AZEZY<span class="text-primaryGold">BALL</span> <span class="text-xs bg-primaryGold/20 text-primaryGold font-bold px-2 py-0.5 rounded-full border border-primaryGold/30">3D</span></span>
+                        <p class="text-[10px] text-textGray font-semibold tracking-wider uppercase">by azezy.com</p>
+                    </div>
+                </a>
+
+                <nav class="hidden md:flex items-center space-x-8 text-sm font-bold uppercase tracking-wider">
+                    <a href="#features" class="text-textGray hover:text-primaryGold transition-colors">Tính năng</a>
+                    <a href="#gameplay" class="text-textGray hover:text-primaryGold transition-colors">Cách chơi</a>
+                    <a href="#screenshots" class="text-textGray hover:text-primaryGold transition-colors">Hình ảnh</a>
+                    <a href="privacy.html" class="text-textGray hover:text-primaryGold transition-colors">Quyền riêng tư</a>
+                    <a href="https://play.google.com/store/apps/details?id=com.azezy.azezyball" target="_blank" class="px-5 py-2.5 bg-gradient-to-r from-primaryGold to-amber-500 text-appBg font-black rounded-xl hover:shadow-lg hover:shadow-primaryGold/30 hover:scale-105 transition-all">
+                        Tải Game Ngay
+                    </a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="relative pt-36 pb-24 md:pt-48 md:pb-36 hero-gradient overflow-hidden">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+                
+                <!-- Left: Headline & CTA -->
+                <div class="lg:col-span-7 text-center lg:text-left">
+                    <div class="inline-flex items-center px-4 py-2 rounded-full glass-gold text-primaryGold text-xs font-black uppercase tracking-widest mb-6">
+                        <span class="mr-2">🔥</span> Siêu Phẩm Game Bóng Đá Arcade 3D 120 FPS
+                    </div>
+
+                    <h1 class="text-4xl sm:text-6xl font-black text-white tracking-tight leading-none mb-6">
+                        TUYỆT ĐỈNH <br class="hidden sm:inline">
+                        <span class="text-transparent bg-clip-text bg-gradient-to-r from-primaryGold via-yellow-200 to-amber-500">SÚT PHẠT 3D</span> <br>
+                        BÀN THẮNG VÀNG!
+                    </h1>
+
+                    <p class="text-lg text-textGray leading-relaxed mb-8 max-w-2xl mx-auto lg:mx-0">
+                        Chạm vuốt để tạo nên những siêu phẩm sút xoáy uy lực. Tận hưởng đồ họa Canvas 3D tăng tốc phần cứng mượt mà không độ trễ, bóng Telstar phát sáng và chinh phục chuỗi bàn thắng kỷ lục.
+                    </p>
+
+                    <!-- CTA Buttons -->
+                    <div class="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
+                        <a href="https://play.google.com/store/apps/details?id=com.azezy.azezyball" target="_blank" class="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-primaryGold to-amber-500 text-slate-950 font-black rounded-2xl flex items-center justify-center space-x-3 shadow-xl hover:shadow-primaryGold/30 hover:scale-105 transition-all">
+                            <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24">
+                                <path d="M3.609 1.814L13.792 12 3.61 22.186a2.404 2.404 0 0 1-.61-1.61V3.424c0-.623.228-1.2.61-1.61zm11.603 11.604l2.585 2.586-12.04 6.897 9.455-9.483zm0-2.836L5.758 1.1l12.04 6.897-2.586 2.585zm1.418 1.418l3.197 1.83a1.499 1.499 0 0 1 0 2.34l-3.197 1.83-2.025-2.001 2.025-1.999z"/>
+                            </svg>
+                            <span>TẢI TRÊN GOOGLE PLAY</span>
+                        </a>
+
+                        <a href="privacy.html" class="w-full sm:w-auto px-8 py-4 glass text-white font-bold rounded-2xl flex items-center justify-center space-x-2 hover:border-primaryGold/50 transition-all">
+                            <span>🛡️ Chính Sách Quyền Riêng Tư</span>
+                        </a>
+                    </div>
+
+                    <!-- Key Stats -->
+                    <div class="grid grid-cols-3 gap-4 mt-10 pt-8 border-t border-white/10 max-w-lg mx-auto lg:mx-0">
+                        <div>
+                            <p class="text-2xl sm:text-3xl font-black text-primaryGold">120 FPS</p>
+                            <p class="text-xs text-textGray uppercase font-semibold">Siêu mượt mà</p>
+                        </div>
+                        <div>
+                            <p class="text-2xl sm:text-3xl font-black text-turfGreen">0 MB/s</p>
+                            <p class="text-xs text-textGray uppercase font-semibold">Offline 100%</p>
+                        </div>
+                        <div>
+                            <p class="text-2xl sm:text-3xl font-black text-skyBlue">4.4 MB</p>
+                            <p class="text-xs text-textGray uppercase font-semibold">Siêu nhẹ máy</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Phone Mockup Visual -->
+                <div class="lg:col-span-5 flex justify-center relative">
+                    <div class="relative w-[280px] sm:w-[320px] rounded-[42px] p-3 bg-gradient-to-b from-slate-700 via-slate-900 to-black shadow-2xl glow-gold animate-float border-4 border-amber-500/30">
+                        <div class="rounded-[32px] overflow-hidden bg-black shadow-inner">
+                            <img src="screenshot1.png" alt="Azezy Ball 3D Gameplay Screen" class="w-full h-auto object-cover block">
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Core Features Grid -->
+    <section id="features" class="py-24 bg-surfaceBg relative border-t border-white/5">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-3xl mx-auto mb-16">
+                <span class="text-xs font-black uppercase tracking-[0.2em] text-primaryGold bg-primaryGold/10 px-4 py-1.5 rounded-full border border-primaryGold/20">Tính Năng Đột Phá</span>
+                <h2 class="text-3xl sm:text-5xl font-black text-white mt-4 tracking-tight">CẢM GIÁC BÓNG ĐẲNG CẤP THẾ GIỚI</h2>
+                <p class="text-textGray mt-4 text-base">Được thiết kế tinh chỉnh từ vật lý sút xoáy Magnus đến hiệu ứng camera 3D chuẩn xác.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                
+                <!-- Feature 1 -->
+                <div class="glass p-8 rounded-3xl hover:border-primaryGold/50 transition-all group hover:-translate-y-2">
+                    <div class="w-14 h-14 rounded-2xl bg-amber-500/10 text-primaryGold flex items-center justify-center text-3xl mb-6 group-hover:scale-110 transition-transform">
+                        ⚡
+                    </div>
+                    <h3 class="text-xl font-black text-white mb-3">Canvas 3D 120 FPS</h3>
+                    <p class="text-sm text-textGray leading-relaxed">
+                        Công nghệ dựng hình Hardware-Accelerated tận dụng tối đa GPU, không cấp phát bộ nhớ rác, phản hồi cảm ứng tức thì.
+                    </p>
+                </div>
+
+                <!-- Feature 2 -->
+                <div class="glass p-8 rounded-3xl hover:border-turfGreen/50 transition-all group hover:-translate-y-2">
+                    <div class="w-14 h-14 rounded-2xl bg-emerald-500/10 text-turfGreen flex items-center justify-center text-3xl mb-6 group-hover:scale-110 transition-transform">
+                        🎯
+                    </div>
+                    <h3 class="text-xl font-black text-white mb-3">2 Chế Độ Sút Chuẩn 1-1</h3>
+                    <p class="text-sm text-textGray leading-relaxed">
+                        Tùy biến linh hoạt giữa chế độ Vuốt tự do (Swipe Flick) và Kéo ngắm (Slingshot Aim) để điều hướng bóng vào góc hiểm.
+                    </p>
+                </div>
+
+                <!-- Feature 3 -->
+                <div class="glass p-8 rounded-3xl hover:border-primaryGold/50 transition-all group hover:-translate-y-2">
+                    <div class="w-14 h-14 rounded-2xl bg-yellow-500/10 text-yellow-400 flex items-center justify-center text-3xl mb-6 group-hover:scale-110 transition-transform">
+                        👑
+                    </div>
+                    <h3 class="text-xl font-black text-white mb-3">Bóng Telstar & Gôn Vàng</h3>
+                    <p class="text-sm text-textGray leading-relaxed">
+                        Tạo hình quả bóng Telstar kinh điển viền chỉ vàng kim loại, khung thành mạ vàng khối có khớp chữ A và lưới 3D sinh động.
+                    </p>
+                </div>
+
+                <!-- Feature 4 -->
+                <div class="glass p-8 rounded-3xl hover:border-red-500/50 transition-all group hover:-translate-y-2">
+                    <div class="w-14 h-14 rounded-2xl bg-red-500/10 text-red-400 flex items-center justify-center text-3xl mb-6 group-hover:scale-110 transition-transform">
+                        🔥
+                    </div>
+                    <h3 class="text-xl font-black text-white mb-3">Chuỗi Bàn Thắng Hero Streak</h3>
+                    <p class="text-sm text-textGray leading-relaxed">
+                        Hệ thống nhân điểm x2, x3, x5 theo chuỗi bàn thắng liên tiếp với hiệu ứng nảy phóng to và pháo hoa rực rỡ khi ghi bàn.
+                    </p>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Gameplay Guide Section -->
+    <section id="gameplay" class="py-24 bg-appBg relative">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-3xl mx-auto mb-16">
+                <span class="text-xs font-black uppercase tracking-[0.2em] text-turfGreen bg-emerald-500/10 px-4 py-1.5 rounded-full border border-emerald-500/20">Hướng Dẫn Nhanh</span>
+                <h2 class="text-3xl sm:text-5xl font-black text-white mt-4 tracking-tight">3 BƯỚC ĐỂ TRỞ THÀNH VUA PHÁ LƯỚI</h2>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="glass p-8 rounded-3xl border border-white/5 relative">
+                    <div class="text-6xl font-black text-white/10 absolute top-6 right-6">01</div>
+                    <div class="w-12 h-12 rounded-xl bg-primaryGold text-slate-950 font-black text-xl flex items-center justify-center mb-6">1</div>
+                    <h3 class="text-xl font-bold text-white mb-3">Ngắm Hướng Sút</h3>
+                    <p class="text-sm text-textGray">Chạm vào quả bóng ở chấm phạt đền, xác định góc sút hiểm hóc vượt qua tầm với thủ môn.</p>
+                </div>
+
+                <div class="glass p-8 rounded-3xl border border-white/5 relative">
+                    <div class="text-6xl font-black text-white/10 absolute top-6 right-6">02</div>
+                    <div class="w-12 h-12 rounded-xl bg-turfGreen text-slate-950 font-black text-xl flex items-center justify-center mb-6">2</div>
+                    <h3 class="text-xl font-bold text-white mb-3">Vuốt Tạo Độ Xoáy</h3>
+                    <p class="text-sm text-textGray">Vuốt ngón tay thẳng hoặc uốn cong để tạo quỹ đạo sút xoáy chuối đánh lừa thủ môn.</p>
+                </div>
+
+                <div class="glass p-8 rounded-3xl border border-white/5 relative">
+                    <div class="text-6xl font-black text-white/10 absolute top-6 right-6">03</div>
+                    <div class="w-12 h-12 rounded-xl bg-skyBlue text-slate-950 font-black text-xl flex items-center justify-center mb-6">3</div>
+                    <h3 class="text-xl font-bold text-white mb-3">Lập Chuỗi Kỷ Lục</h3>
+                    <p class="text-sm text-textGray">Ghi bàn liên tiếp để kích hoạt hệ số nhân điểm x2, x3, x5 và ghi danh vào bảng vàng Azezy.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- In-Game Screenshots Gallery -->
+    <section id="screenshots" class="py-24 bg-surfaceBg border-t border-white/5">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-3xl mx-auto mb-16">
+                <span class="text-xs font-black uppercase tracking-[0.2em] text-primaryGold bg-primaryGold/10 px-4 py-1.5 rounded-full border border-primaryGold/20">Giao Diện Thực Tế</span>
+                <h2 class="text-3xl sm:text-5xl font-black text-white mt-4 tracking-tight">HÌNH ẢNH TRẬN ĐẤU SẮC NÉT</h2>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 justify-items-center">
+                <div class="rounded-3xl overflow-hidden glass p-3 max-w-[300px] hover:scale-105 transition-transform duration-300 shadow-xl">
+                    <img src="screenshot1.png" alt="Azezy Ball 3D Shot View" class="rounded-2xl w-full h-auto object-cover">
+                    <p class="text-center text-xs font-bold text-textGray mt-3">Góc Sút Phạt Đền 11m</p>
+                </div>
+                <div class="rounded-3xl overflow-hidden glass p-3 max-w-[300px] hover:scale-105 transition-transform duration-300 shadow-xl">
+                    <img src="screenshot2.png" alt="Azezy Ball 3D Goal Scene" class="rounded-2xl w-full h-auto object-cover">
+                    <p class="text-center text-xs font-bold text-textGray mt-3">Khung Thành & Biển LED 3D</p>
+                </div>
+                <div class="rounded-3xl overflow-hidden glass p-3 max-w-[300px] hover:scale-105 transition-transform duration-300 shadow-xl">
+                    <img src="screenshot3.png" alt="Azezy Ball 3D Celebration" class="rounded-2xl w-full h-auto object-cover">
+                    <p class="text-center text-xs font-bold text-textGray mt-3">Bầu Trời Xanh & Mây Trôi</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-appBg border-t border-white/10 py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row justify-between items-center gap-6">
+                <div class="flex items-center space-x-3">
+                    <div class="w-8 h-8 rounded-lg bg-primaryGold flex items-center justify-center text-slate-950 font-bold">⚽</div>
+                    <span class="text-xl font-black text-white tracking-tight">AZEZY<span class="text-primaryGold">BALL</span> 3D</span>
+                </div>
+
+                <div class="flex flex-wrap justify-center gap-6 text-sm font-semibold text-textGray">
+                    <a href="#features" class="hover:text-primaryGold transition-colors">Tính năng</a>
+                    <a href="#gameplay" class="hover:text-primaryGold transition-colors">Cách chơi</a>
+                    <a href="privacy.html" class="hover:text-primaryGold transition-colors">Chính sách quyền riêng tư</a>
+                    <a href="terms.html" class="hover:text-primaryGold transition-colors">Điều khoản sử dụng</a>
+                    <a href="mailto:binhcover98@gmail.com" class="hover:text-primaryGold transition-colors">Hỗ trợ kỹ thuật</a>
+                </div>
+            </div>
+
+            <div class="mt-8 pt-8 border-t border-white/5 text-center text-xs text-textGray flex flex-col sm:flex-row justify-between items-center gap-4">
+                <p>© 2026 Azezy Studio (azezy.com). All rights reserved.</p>
+                <p class="text-textGray/60">Tên gói ứng dụng: <code class="text-primaryGold/80">com.azezy.azezyball</code></p>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>
