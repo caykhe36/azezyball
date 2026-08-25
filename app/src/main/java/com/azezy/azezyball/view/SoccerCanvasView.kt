@@ -76,6 +76,11 @@ class SoccerCanvasView @JvmOverloads constructor(
     private var camFollowY = 0f
     private var camFollowZ = 0f
 
+    // Animated Drifting Clouds
+    private var cloudDrift1 = 0f
+    private var cloudDrift2 = 0f
+    private var cloudDrift3 = 0f
+
     // Touch & Aiming
     private var touchDownX = 0f
     private var touchDownY = 0f
@@ -105,6 +110,7 @@ class SoccerCanvasView @JvmOverloads constructor(
     // Pre-allocated Paints (Zero allocations in onDraw)
     private val skyPaint = Paint()
     private val sunPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val sunGlowPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val cloudPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val stadiumPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val crowdPaint = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -146,7 +152,11 @@ class SoccerCanvasView @JvmOverloads constructor(
 
     private fun initPaints() {
         sunPaint.color = Color.rgb(253, 224, 71)
-        cloudPaint.color = Color.argb(220, 255, 255, 255)
+        sunGlowPaint.apply {
+            color = Color.argb(75, 254, 240, 138)
+            style = Paint.Style.FILL
+        }
+        cloudPaint.color = Color.argb(225, 255, 255, 255)
         stadiumPaint.color = Color.rgb(30, 41, 59)
         crowdPaint.color = Color.rgb(51, 65, 85)
         boardPaint.color = Color.rgb(79, 70, 229) // Indigo LED boards
@@ -282,15 +292,31 @@ class SoccerCanvasView @JvmOverloads constructor(
             camFollowZ += (0f - camFollowZ) * 0.15f
         }
 
-        val horizonY = h * 0.40f + (camFollowY * 18f)
+        val horizonY = h * 0.43f + (camFollowY * 18f)
         val pitchCenterBottomY = h * 0.84f + (camFollowY * 15f)
         val pitchCenterBottomX = w * 0.5f - (camFollowX * 22f)
 
-        // 1. Draw Bright 3D Cartoon Sky Dome & Clouds
+        // 1. Draw Bright 3D Cartoon Sky Dome, Sun & Animated Drifting Clouds
         canvas.drawRect(0f, 0f, w, horizonY, skyPaint)
-        canvas.drawCircle(w * 0.82f, horizonY * 0.35f, 32f, sunPaint)
-        drawCloud(canvas, w * 0.18f - camFollowX * 10f, horizonY * 0.38f, 1.0f)
-        drawCloud(canvas, w * 0.68f - camFollowX * 10f, horizonY * 0.28f, 0.85f)
+
+        // Sun & Glowing Corona (Clearly in full view in the open sky below HUD)
+        val sunX = w * 0.82f - camFollowX * 10f
+        val sunY = horizonY * 0.68f
+        canvas.drawCircle(sunX, sunY, 44f, sunGlowPaint)
+        canvas.drawCircle(sunX, sunY, 26f, sunPaint)
+
+        // Fluffy Animated Drifting Clouds (Floating freely in full view below HUD)
+        val c1X = ((w * 0.16f + cloudDrift1) % (w + 180f)) - 90f - camFollowX * 12f
+        val c1Y = horizonY * 0.74f
+        drawCloud(canvas, c1X, c1Y, 1.15f)
+
+        val c2X = ((w * 0.58f + cloudDrift2) % (w + 180f)) - 90f - camFollowX * 12f
+        val c2Y = horizonY * 0.62f
+        drawCloud(canvas, c2X, c2Y, 0.90f)
+
+        val c3X = ((w * 0.35f + cloudDrift3) % (w + 180f)) - 90f - camFollowX * 12f
+        val c3Y = horizonY * 0.84f
+        drawCloud(canvas, c3X, c3Y, 0.75f)
 
         // 2. Draw 3D Stadium Stands & Grandstands
         canvas.drawRect(0f, horizonY - 26f, w, horizonY, stadiumPaint)
@@ -595,6 +621,11 @@ class SoccerCanvasView @JvmOverloads constructor(
     }
 
     private fun updatePhysics(dt: Float) {
+        // Gentle animated cloud drifting across sky
+        cloudDrift1 += 5.5f * dt
+        cloudDrift2 += 3.8f * dt
+        cloudDrift3 += 2.6f * dt
+
         // Goalkeeper movement
         if (goalkeeperEnabled) {
             gkX += gkDir * gkSpeed * dt
