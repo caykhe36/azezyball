@@ -18,136 +18,167 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <!-- Compact Floating Top Bar (Single Clean Row with Safe Spacing) -->
+    <!-- Spacious 2-Row Floating Top HUD Container (Never overlapping on any screen) -->
     <LinearLayout
         android:id="@+id/topBar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:paddingHorizontal="14dp"
-        android:paddingTop="52dp"
-        android:paddingBottom="8dp"
+        android:orientation="vertical"
+        android:paddingHorizontal="16dp"
+        android:paddingTop="48dp"
+        android:paddingBottom="6dp"
         app:layout_constraintTop_toTopOf="parent">
 
-        <!-- Left: HERO BIG STREAK BADGE (Số lần vào liên tiếp) -->
+        <!-- ROW 1: Brand & Action Controls (Sound, Settings) -->
         <LinearLayout
-            android:id="@+id/llStreakCard"
-            android:layout_width="wrap_content"
-            android:layout_height="44dp"
-            android:background="@drawable/bg_hud_streak"
-            android:elevation="8dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:paddingHorizontal="14dp">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="🔥"
-                android:textSize="20sp" />
-
-            <TextView
-                android:id="@+id/tvStreak"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="4dp"
-                android:fontFamily="sans-serif-black"
-                android:shadowColor="#99000000"
-                android:shadowDx="0"
-                android:shadowDy="2"
-                android:shadowRadius="4"
-                android:text="x0"
-                android:textColor="@color/white"
-                android:textSize="22sp" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="4dp"
-                android:fontFamily="sans-serif-bold"
-                android:text="LIÊN TIẾP"
-                android:textColor="#FEF08A"
-                android:textSize="10sp" />
-        </LinearLayout>
-
-        <!-- Flexible Spacer to prevent overlapping on any screen size -->
-        <Space
-            android:layout_width="0dp"
-            android:layout_height="1dp"
-            android:layout_weight="1" />
-
-        <!-- Center: Score & Distance Pill -->
-        <LinearLayout
-            android:id="@+id/llScoreCard"
-            android:layout_width="wrap_content"
-            android:layout_height="36dp"
-            android:background="@drawable/bg_hud_panel"
-            android:elevation="4dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:paddingHorizontal="10dp">
-
-            <TextView
-                android:id="@+id/tvScore"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:fontFamily="sans-serif-black"
-                android:text="⚽ 0"
-                android:textColor="@color/text_dark"
-                android:textSize="14sp" />
-
-            <View
-                android:layout_width="1dp"
-                android:layout_height="14dp"
-                android:layout_marginHorizontal="6dp"
-                android:background="#E2E8F0" />
-
-            <TextView
-                android:id="@+id/tvDistance"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:fontFamily="sans-serif-bold"
-                android:text="🎯 10.5m"
-                android:textColor="@color/cartoon_orange"
-                android:textSize="13sp" />
-        </LinearLayout>
-
-        <!-- Flexible Spacer -->
-        <Space
-            android:layout_width="0dp"
-            android:layout_height="1dp"
-            android:layout_weight="1" />
-
-        <!-- Right: Action Buttons -->
-        <LinearLayout
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
             android:orientation="horizontal">
 
-            <!-- Sound Button -->
-            <ImageButton
-                android:id="@+id/btnSound"
-                android:layout_width="42dp"
-                android:layout_height="42dp"
-                android:background="@drawable/bg_icon_button"
-                android:contentDescription="Âm thanh"
-                android:elevation="6dp"
-                android:padding="9dp"
-                android:src="@drawable/ic_volume_up" />
+            <!-- Brand Watermark Chip -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:background="@drawable/bg_hud_panel"
+                android:elevation="4dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="12dp">
 
-            <!-- Settings Button -->
-            <ImageButton
-                android:id="@+id/btnSettings"
-                android:layout_width="42dp"
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-black"
+                    android:text="★ AZEZY.COM"
+                    android:textColor="@color/cartoon_orange"
+                    android:textSize="13sp" />
+            </LinearLayout>
+
+            <Space
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1" />
+
+            <!-- Action Buttons: Large & Never Clipped -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageButton
+                    android:id="@+id/btnSound"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:background="@drawable/bg_icon_button"
+                    android:contentDescription="Âm thanh"
+                    android:elevation="6dp"
+                    android:padding="10dp"
+                    android:src="@drawable/ic_volume_up" />
+
+                <ImageButton
+                    android:id="@+id/btnSettings"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:layout_marginStart="10dp"
+                    android:background="@drawable/bg_icon_button"
+                    android:contentDescription="Cài đặt &amp; Tùy chọn"
+                    android:elevation="6dp"
+                    android:padding="10dp"
+                    android:src="@drawable/ic_settings" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- ROW 2: Hero Gameplay Dashboard (Streak & Score Badges) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <!-- Left: Hero Big Streak Badge (Số lần vào liên tiếp) -->
+            <LinearLayout
+                android:id="@+id/llStreakCard"
+                android:layout_width="wrap_content"
+                android:layout_height="46dp"
+                android:background="@drawable/bg_hud_streak"
+                android:elevation="8dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="🔥"
+                    android:textSize="22sp" />
+
+                <TextView
+                    android:id="@+id/tvStreak"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:fontFamily="sans-serif-black"
+                    android:shadowColor="#99000000"
+                    android:shadowDx="0"
+                    android:shadowDy="2"
+                    android:shadowRadius="4"
+                    android:text="x0"
+                    android:textColor="@color/white"
+                    android:textSize="24sp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:fontFamily="sans-serif-bold"
+                    android:text="LIÊN TIẾP"
+                    android:textColor="#FEF08A"
+                    android:textSize="11sp" />
+            </LinearLayout>
+
+            <Space
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1" />
+
+            <!-- Right: Score & Distance Pill -->
+            <LinearLayout
+                android:id="@+id/llScoreCard"
+                android:layout_width="wrap_content"
                 android:layout_height="42dp"
-                android:layout_marginStart="8dp"
-                android:background="@drawable/bg_icon_button"
-                android:contentDescription="Cài đặt &amp; Tùy chọn"
+                android:background="@drawable/bg_hud_panel"
                 android:elevation="6dp"
-                android:padding="9dp"
-                android:src="@drawable/ic_settings" />
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="14dp">
+
+                <TextView
+                    android:id="@+id/tvScore"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-black"
+                    android:text="⚽ 0"
+                    android:textColor="@color/text_dark"
+                    android:textSize="16sp" />
+
+                <View
+                    android:layout_width="1.5dp"
+                    android:layout_height="16dp"
+                    android:layout_marginHorizontal="8dp"
+                    android:background="#CBD5E1" />
+
+                <TextView
+                    android:id="@+id/tvDistance"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-bold"
+                    android:text="🎯 10.5m"
+                    android:textColor="@color/cartoon_orange"
+                    android:textSize="14sp" />
+            </LinearLayout>
         </LinearLayout>
     </LinearLayout>
 
